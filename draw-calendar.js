@@ -5,15 +5,6 @@ const courseDates = new Set();
 const courseDatesArr = [];
 const courseTables = document.getElementsByClassName("css-sec5tc");
 
-function getCourseTerms() {
-  let courseRows = courseTables[0].rows;
-  for (let i = 2; i < courseRows.length(); i++) {
-    courseDates.add(parseCourseDate(courseRows[i][10]));
-  }
-  courseDatesArr = Array.from(courseDates);
-  courseDatesArr.sort();
-}
-
 function parseCourseDate(courseDate) {
   courseDate.replace("-", "");
   return parseInt(courseDate);
@@ -37,18 +28,6 @@ async function getElementTerm(courseRow) {
   }
 }
 
-//tags elements with given term
-async function tagElements() {
-  let courseRows = courseTables[0].rows;
-  for (let i = 2; i < courseRows.length(); i++) {
-    let elemTerm = await getElementTerm(courseRows[i]);
-    if (TERM.toString() == elemTerm) {
-      let courseName = await courseRows[4].innerText.slice(0, 10);
-      coursesToShow.add(courseName);
-    }
-  }
-}
-
 //displays tagged elements on calendar page
 async function displayElements() {
   for (const course of courseElements) {
@@ -61,15 +40,7 @@ async function displayElements() {
   }
 }
 
-function refreshElements() {
-  for (const course of courseElements) {
-    showElement(course);
-  }
-  courseNameMap.clear();
-}
-
-async function main() {
-  await tagElements(refreshElements());
+async function draw() {
   // increase the size of the popup
   document.styleSheets[40].insertRule(
     ".WCU.WACR { max-width: 1000px !important; }",
@@ -80,7 +51,7 @@ async function main() {
   redrawCalendar();
 }
 
-getCourseTerms();
+draw();
 
 //redraws calendar with correct widths
 function redrawCalendar() {
