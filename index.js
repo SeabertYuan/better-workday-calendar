@@ -1,13 +1,15 @@
 var TERM = 1;
 const coursesToShow = new Set();
 const courseDates = new Set();
-const courseDatesArr = [];
+var courseDatesArr;
 const courseTables = document.getElementsByClassName("css-sec5tc");
 
 function getCourseTerms() {
+  courseDatesArr = [];
   let courseRows = courseTables[0].rows;
-  for (let i = 2; i < courseRows.length(); i++) {
-    courseDates.add(parseCourseDate(courseRows[i][10]));
+  for (let i = 2; i < courseRows.length; i++) {
+    let date = parseCourseDate(courseRows[i].childNodes[10]);
+    courseDates.add(date);
   }
   courseDatesArr = Array.from(courseDates);
   //sorts course start dates by increasing order
@@ -15,13 +17,13 @@ function getCourseTerms() {
 }
 
 function parseCourseDate(courseDate) {
-  courseDate.replace("-", "");
-  return parseInt(courseDate);
+  let dateString = courseDate.innerText.replaceAll("-", "");
+  return parseInt(dateString);
 }
 
 // gets the term of the given course
 async function getCourseTerm(courseRow) {
-  let courseDate = parseCourseDate(courseRow[10]);
+  let courseDate = parseCourseDate(courseRow.childNodes[10]);
   if (courseDatesArr[0] - courseDate == 0) {
     return 1;
   } else {
@@ -32,21 +34,21 @@ async function getCourseTerm(courseRow) {
 //tags elements with given term
 async function tagCourses() {
   let courseRows = courseTables[0].rows;
-  for (let i = 2; i < courseRows.length(); i++) {
+  for (let i = 2; i < courseRows.length; i++) {
     let elemTerm = await getCourseTerm(courseRows[i]);
     if (TERM == elemTerm) {
-      let courseName = await courseRows[4].innerText.slice(0, 10);
+      let courseName = await courseRows[i].childNodes[4].innerText.slice(0, 10);
       coursesToShow.add(courseName);
     }
   }
 }
 
-function refreshElements() {
-  courseNameMap.clear();
+function clearCourses() {
+  coursesToShow.clear();
 }
 
-async function filterCourses() {
-  getCourseTerms(refreshElements());
+function filterCourses() {
+  getCourseTerms(clearCourses());
   tagCourses();
 }
 

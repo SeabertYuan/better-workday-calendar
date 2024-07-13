@@ -1,4 +1,5 @@
-const courseElements = document.getElementsByClassName("WMSC WKSC WLTC WEUC");
+var courseElements = document.getElementsByClassName("WMSC WKSC WLTC WEUC");
+const WIDTH = 14.2857;
 
 function hideElement(element) {
   element.style.display = "none";
@@ -11,7 +12,7 @@ function showElement(element) {
 //displays tagged elements on calendar page
 async function displayElements() {
   for (const course of courseElements) {
-    let courseName = await course.innerText.split("\n")[0].slice(0, -4);
+    let courseName = course.innerText.slice(0, 10);
     if (coursesToShow.has(courseName)) {
       showElement(course);
     } else {
@@ -26,12 +27,18 @@ async function draw() {
     ".WCU.WACR { max-width: 1000px !important; }",
     document.styleSheets[40].cssRules.length,
   );
-
+  await resetCalendar();
   await displayElements();
   redrawCalendar();
 }
 
 draw();
+
+async function resetCalendar() {
+  for (const course of courseElements) {
+    showElement(course);
+  }
+}
 
 //redraws calendar with correct widths
 function redrawCalendar() {
