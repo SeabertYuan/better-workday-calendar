@@ -1,14 +1,4 @@
-var TERM = 1;
 const courseElements = document.getElementsByClassName("WMSC WKSC WLTC WEUC");
-const coursesToShow = new Set();
-const courseDates = new Set();
-const courseDatesArr = [];
-const courseTables = document.getElementsByClassName("css-sec5tc");
-
-function parseCourseDate(courseDate) {
-  courseDate.replace("-", "");
-  return parseInt(courseDate);
-}
 
 function hideElement(element) {
   element.style.display = "none";
@@ -16,16 +6,6 @@ function hideElement(element) {
 
 function showElement(element) {
   element.style.display = "block";
-}
-
-// gets the terms of the given element
-async function getElementTerm(courseRow) {
-  let courseDate = parseCourseDate(courseRow[10]);
-  if (courseDatesArr[0] - courseDate == 0) {
-    return 1;
-  } else {
-    return 2;
-  }
 }
 
 //displays tagged elements on calendar page
