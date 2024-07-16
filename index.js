@@ -48,5 +48,3 @@ function filterCourses() {
   clearCourses();
   tagCourses();
 }
-
-filterCourses();
