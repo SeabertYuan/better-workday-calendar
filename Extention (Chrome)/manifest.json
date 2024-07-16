@@ -1,0 +1,14 @@
+{
+  "name": "Workday Calendar by Term",
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "description": "Displays the workday course calendar by term",
+  "permissions": [
+    "activeTab"
+  ],
+  "content_scripts": [{
+    "matches": ["https://wd10.myworkday.com/ubc/d/task/2998$28771.htmld"],
+    "js": ["chrome_draw-calendar.js", "chrome_process_courses.js", "chrome_index.js"],
+    "run_at": "document_idle"
+  }]
+}
