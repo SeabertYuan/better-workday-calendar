@@ -1,17 +1,16 @@
 # Better Workday Calendar
 
-An extension that fixes overlapping course terms in the calendar view.
+A simple project that fixes overlapping course terms in the calendar view.
 
 ## Usage
 
-As of 07.15.24, this project is a set of scripts that should be run in your browser's inspect elements console.
+As of 07.15.24, this project is a set of scripts that should be run in your browser's inspect elements console. The script will add buttons that you can press to view specific terms in the calendar!
 
 1. Paste the contents of `index.js` into the console
-2. Paste the contents of `draw-calendar.js` into the console
-3. Profit.
+2. Profit.
 
-To change terms, type `TERM = x` where `x` is the desired term number. Then run `filterCourses()` and finally `draw()` in the console.
-
-## Todo
+## What's next?
 
 - [ ] Turn it into an extension!
+- [ ] Bug fixes related to smaller viewports
+- [ ] Ability to export calendar
