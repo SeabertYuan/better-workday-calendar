@@ -103,3 +103,43 @@ function updateCalendar() {
   filterCourses();
   draw();
 }
+
+// adds css styles
+function addStyles() {
+  const css = `
+    .term-filter-buttons {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-left: auto;
+      padding-inline: 10px;
+    }
+    
+    .term-filter-button {
+      padding: 5px 10px;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .term-filter-button:not(.active):hover {
+      background-color: #e0e0e0;
+    }
+    
+    .term-filter-button.active {
+      background-color: #2391d7;
+      color: white;
+    }
+    
+    .css-1i5y6dv-StyledBoxElement-StyledFlex-IconsContainer {
+      margin-inline-start: 0;
+    }
+  `;
+
+  const styleElement = document.createElement('style');
+  styleElement.appendChild(document.createTextNode(css));
+  
+  document.head.appendChild(styleElement);
+}

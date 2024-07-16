@@ -11,6 +11,7 @@ function main() {
   term1_button = document.querySelectorAll(".term-filter-button")[0];
   updateButtonStyles(term1_button);
   updateCalendar();
+  addStyles();
 }
 
 // use addEventListener to wait for all the DOM to be loaded
