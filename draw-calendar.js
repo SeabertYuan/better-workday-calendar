@@ -22,12 +22,12 @@ function displayElements() {
 }
 
 function draw() {
-  //let style = document.createElement("style");
-  //document.head.appendChild(style);
-  //style.sheet.insertRule(
-  //  ".WCU.WACR { max-width: 1000px !important; }",
-  //  0
-  //);
+  let style = document.createElement("style");
+  document.head.appendChild(style);
+  style.sheet.insertRule(
+    ".WCU.WACR { max-width: 1000px !important; }",
+    0
+  );
   resetCalendar();
   displayElements();
   redrawCalendar();

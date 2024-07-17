@@ -1,3 +1,5 @@
+// initialize variables (wait for the course tables and course elements
+// to show up then initialize them)
 function initializeVariables() {
   TERM = 1;
   return Promise.all([
@@ -9,6 +11,7 @@ function initializeVariables() {
   });
 }
 
+// wait for an element (selector) to be loaded and then return it
 function waitForElement(selector) {
   return new Promise(resolve => {
     if (document.querySelector(selector)) {
@@ -29,10 +32,13 @@ function waitForElement(selector) {
   });
 }
 
+// If the popup exists (the header element that only exists in the
+// popup is used as a detector)
 function isPopupOpen() {
   return !!document.querySelector('.css-fgks37-HeaderContents');
 }
 
+// Wait for the popup to show up
 function waitForPopup() {
   return new Promise(resolve => {
     if (isPopupOpen()) {
@@ -48,19 +54,13 @@ function waitForPopup() {
   });
 }
 
+// run the main program
+// initialize variables -> add buttons -> update calendar -> add styles
 function runProgram() {
   initializeVariables().then(() => {
-    if (courseTables.length == 0 || courseElements.length == 0) {
-      console.error("Course elements not found.");
-      return;
-    }
     addFilterButtons();
-    console.log("added buttons");
     let term1_button = document.querySelectorAll(".term-filter-button")[0];
-    if (term1_button) {
-      updateButtonStyles(term1_button);
-    }
-    TERM = 1;
+    updateButtonStyles(term1_button);
     updateCalendar();
     addStyles();
   }).catch(error => {
@@ -68,6 +68,10 @@ function runProgram() {
   });
 }
 
+// popup observer
+// if there is no popup, wait for it to appear
+// if there is a pop, run the program and wait for
+// the popup to close and call this funciton reccursively
 function observePopup() {
   waitForPopup().then(() => {
     runProgram();
@@ -76,18 +80,18 @@ function observePopup() {
       if (!isPopupOpen()) {
         closeObserver.disconnect();
         observePopup();
-        console.log("closed");
       }
     });
     closeObserver.observe(document.body, { childList: true, subtree: true });
   });
 }
 
+// start observing the popup
 function main() {
   observePopup();
 }
 
-// Run main when the DOM is fully loaded
+// run main when the DOM is fully loaded
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", main);
 } else {
