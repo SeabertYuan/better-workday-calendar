@@ -1,7 +1,7 @@
 // initialize variables (wait for the course tables and course elements
 // to show up then initialize them)
 function initializeVariables() {
-  TERM = 1;
+  TERM = 0;
   return Promise.all([
     waitForElement('.css-sec5tc'),
     waitForElement('.WMSC.WKSC.WLTC.WEUC')
@@ -46,6 +46,7 @@ function waitForPopup() {
     } else {
       const observer = new MutationObserver(() => {
         if (isPopupOpen()) {
+          observer.disconnect();
           resolve();
         }
       });
@@ -59,8 +60,8 @@ function waitForPopup() {
 function runProgram() {
   initializeVariables().then(() => {
     addFilterButtons();
-    let term1_button = document.querySelectorAll(".term-filter-button")[0];
-    updateButtonStyles(term1_button);
+    //let term1_button = document.querySelectorAll(".term-filter-button")[0];
+    //updateButtonStyles(term1_button);
     updateCalendar();
     addStyles();
   }).catch(error => {

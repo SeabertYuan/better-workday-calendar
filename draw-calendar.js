@@ -30,7 +30,9 @@ function draw() {
   );
   resetCalendar();
   displayElements();
-  redrawCalendar();
+  if (TERM != 0) {
+    redrawCalendar();
+  }
 }
 
 function resetCalendar() {
