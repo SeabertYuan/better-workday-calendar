@@ -1,24 +1,19 @@
 // initialize variables (wait for the course tables and course elements
 // to show up then initialize them)
-function initializeVariables() {
+async function initializeVariables() {
   TERM = 1;
-  return Promise.all([
-    waitForElement('.css-sec5tc'),
-    waitForElement('.WMSC.WKSC.WLTC.WEUC')
-  ]).then(([courseTablesElement, courseElementsCollection]) => {
-    courseTables = Array.from(courseTablesElement);
-    courseElements = Array.from(courseElementsCollection);
-  });
+  courseTables = Array.from(await waitForElement(".css-sec5tc"));
+  courseelements = Array.from(await waitForElement(".WMSC.WKSC.WLTC.WEUC"));
 }
 
 // wait for an element (selector) to be loaded and then return it
 function waitForElement(selector) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     if (document.querySelector(selector)) {
       return resolve(document.querySelectorAll(selector));
     }
 
-    const observer = new MutationObserver(mutations => {
+    const observer = new MutationObserver((mutations) => {
       if (document.querySelector(selector)) {
         resolve(document.querySelectorAll(selector));
         observer.disconnect();
@@ -27,7 +22,7 @@ function waitForElement(selector) {
 
     observer.observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
     });
   });
 }
@@ -35,12 +30,12 @@ function waitForElement(selector) {
 // If the popup exists (the header element that only exists in the
 // popup is used as a detector)
 function isPopupOpen() {
-  return !!document.querySelector('.css-fgks37-HeaderContents');
+  return !!document.querySelector(".css-fgks37-HeaderContents");
 }
 
 // Wait for the popup to show up
 function waitForPopup() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     if (isPopupOpen()) {
       resolve();
     } else {
@@ -57,15 +52,17 @@ function waitForPopup() {
 // run the main program
 // initialize variables -> add buttons -> update calendar -> add styles
 function runProgram() {
-  initializeVariables().then(() => {
-    addFilterButtons();
-    let term1_button = document.querySelectorAll(".term-filter-button")[0];
-    updateButtonStyles(term1_button);
-    updateCalendar();
-    addStyles();
-  }).catch(error => {
-    console.error("Error initializing variables: ", error);
-  });
+  initializeVariables()
+    .then(() => {
+      addFilterButtons();
+      let term1_button = document.querySelectorAll(".term-filter-button")[0];
+      updateButtonStyles(term1_button);
+      updateCalendar();
+      addStyles();
+    })
+    .catch((error) => {
+      console.error("Error initializing variables: ", error);
+    });
 }
 
 // popup observer
@@ -97,3 +94,4 @@ if (document.readyState === "loading") {
 } else {
   main();
 }
+

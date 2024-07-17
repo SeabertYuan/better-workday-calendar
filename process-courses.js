@@ -1,5 +1,5 @@
 let TERM;
-let courseDatesArr, courseTables
+let courseDatesArr, courseTables;
 const coursesToShow = new Set();
 const courseDates = new Set();
 
@@ -24,7 +24,7 @@ function parseCourseDate(courseDate) {
 
 function getCourseTerm(courseRow) {
   let courseDate = parseCourseDate(courseRow.childNodes[10]);
-  return (courseDatesArr[0] - courseDate == 0) ? 1 : 2;
+  return courseDatesArr[0] - courseDate == 0 ? 1 : 2;
 }
 
 function clearCourses() {
@@ -48,3 +48,4 @@ function filterCourses() {
   clearCourses();
   tagCourses();
 }
+
