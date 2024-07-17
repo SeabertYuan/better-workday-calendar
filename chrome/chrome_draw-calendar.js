@@ -108,7 +108,6 @@ function updateCalendar() {
   refreshCourseElements();
   clearCourses();
   filterCourses();
-  console.log(coursesToShow);
   draw();
 }
 

@@ -60,10 +60,9 @@ function runProgram() {
     if (term1_button) {
       updateButtonStyles(term1_button);
     }
-    console.log("Here1");
     TERM = 1;
     updateCalendar();
-    console.log("Here2");
+    addStyles();
   }).catch(error => {
     console.error("Error initializing variables: ", error);
   });
