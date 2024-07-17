@@ -1,0 +1,23 @@
+{
+  "manifest_version": 2,
+  "name": "Better Workday Calendar",
+  "version": "0.3",
+  "description": "Adds functionality to the workday view course calendar page.",
+  "homepage_url": "https://github.com/SeabertYuan/better-workday-calendar/tree/main",
+  "permissions": [
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://wd10.myworkday.com/ubc/d/task/2998$28771.htmld"
+      ],
+      "js": [
+        "firefox_draw-calendar.js",
+        "firefox_process-courses.js",
+        "firefox_index.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
