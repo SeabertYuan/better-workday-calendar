@@ -25,7 +25,7 @@ function draw() {
   let style = document.createElement("style");
   document.head.appendChild(style);
   style.sheet.insertRule(
-    ".WCU.WACR { max-width: 1000px !important; }",
+    ".WCU.wd-popup { max-width: 1000px !important; }",
     0
   );
   resetCalendar();
@@ -144,6 +144,14 @@ function addStyles() {
     
     .css-1i5y6dv-StyledBoxElement-StyledFlex-IconsContainer {
       margin-inline-start: 0;
+    }
+
+    .gwt-Label.WHUC.WOSC.WDVC {
+      font-size: 11px;
+    }
+
+    .gwt-Label.WIUC.WDVC {
+      font-size: 10px
     }
   `;
 
