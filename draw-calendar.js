@@ -22,10 +22,12 @@ function displayElements() {
 }
 
 function draw() {
-  document.styleSheets[40].insertRule(
-    ".WCU.WACR { max-width: 1000px !important; }",
-    document.styleSheets[40].cssRules.length
-  );
+  //let style = document.createElement("style");
+  //document.head.appendChild(style);
+  //style.sheet.insertRule(
+  //  ".WCU.WACR { max-width: 1000px !important; }",
+  //  0
+  //);
   resetCalendar();
   displayElements();
   redrawCalendar();
@@ -97,8 +99,13 @@ function updateButtonStyles(clickedButton) {
   })
 }
 
+function refreshCourseElements() {
+  courseElements = Array.from(document.querySelectorAll('.WMSC.WKSC.WLTC.WEUC'));
+}
+
 // updates the calendar
 function updateCalendar() {
+  refreshCourseElements();
   clearCourses();
   filterCourses();
   draw();

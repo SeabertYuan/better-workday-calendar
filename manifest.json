@@ -1,0 +1,24 @@
+{
+  "name": "Better Workday Calendar",
+  "version": "1.0.0",
+  "description": "",
+  "homepage_url": "https://github.com/SeabertYuan/better-workday-calendar",
+  "manifest_version": 3,
+  "permissions": [
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://wd10.myworkday.com/ubc/d/task/2998$28771.htmld"
+      ],
+      "js": [
+        "draw-calendar.js",
+        "process-courses.js",
+        "index.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
+

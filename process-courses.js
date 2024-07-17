@@ -1,5 +1,5 @@
-let TERM, courseDatesArr;
-let courseTables;
+let TERM;
+let courseDatesArr, courseTables
 const coursesToShow = new Set();
 const courseDates = new Set();
 
