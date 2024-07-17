@@ -1,9 +1,21 @@
 // initialize variables (wait for the course tables and course elements
 // to show up then initialize them)
+<<<<<<< HEAD
 async function initializeVariables() {
   TERM = 1;
   courseTables = Array.from(await waitForElement(".css-sec5tc"));
   courseelements = Array.from(await waitForElement(".WMSC.WKSC.WLTC.WEUC"));
+=======
+function initializeVariables() {
+  TERM = 0;
+  return Promise.all([
+    waitForElement('.css-sec5tc'),
+    waitForElement('.WMSC.WKSC.WLTC.WEUC')
+  ]).then(([courseTablesElement, courseElementsCollection]) => {
+    courseTables = Array.from(courseTablesElement);
+    courseElements = Array.from(courseElementsCollection);
+  });
+>>>>>>> fa71fb88895f3f75e78fac789a7293da1f369c09
 }
 
 // wait for an element (selector) to be loaded and then return it
@@ -41,6 +53,7 @@ function waitForPopup() {
     } else {
       const observer = new MutationObserver(() => {
         if (isPopupOpen()) {
+          observer.disconnect();
           resolve();
         }
       });
@@ -52,6 +65,7 @@ function waitForPopup() {
 // run the main program
 // initialize variables -> add buttons -> update calendar -> add styles
 function runProgram() {
+<<<<<<< HEAD
   initializeVariables()
     .then(() => {
       addFilterButtons();
@@ -63,6 +77,17 @@ function runProgram() {
     .catch((error) => {
       console.error("Error initializing variables: ", error);
     });
+=======
+  initializeVariables().then(() => {
+    addFilterButtons();
+    //let term1_button = document.querySelectorAll(".term-filter-button")[0];
+    //updateButtonStyles(term1_button);
+    updateCalendar();
+    addStyles();
+  }).catch(error => {
+    console.error("Error initializing variables: ", error);
+  });
+>>>>>>> fa71fb88895f3f75e78fac789a7293da1f369c09
 }
 
 // popup observer
