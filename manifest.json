@@ -10,14 +10,14 @@
   "content_scripts": [
     {
       "matches": [
-        "https://wd10.myworkday.com/ubc/d/task/2998$28771.htmld"
+        "*://wd10.myworkday.com/ubc/d/task/2998$28771.htmld"
       ],
       "js": [
         "draw-calendar.js",
         "process-courses.js",
         "index.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ]
 }

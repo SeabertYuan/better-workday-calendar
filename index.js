@@ -52,46 +52,36 @@ function waitForPopup() {
 
 // run the main program
 // initialize variables -> add buttons -> update calendar -> add styles
-function runProgram() {
-  initializeVariables()
-    .then(() => {
-      addFilterButtons();
-      //let term1_button = document.querySelectorAll(".term-filter-button")[0];
-      //updateButtonStyles(term1_button);
-      updateCalendar();
-      addStyles();
-    })
-    .catch((error) => {
-      console.error("Error initializing variables: ", error);
-    });
+async function runProgram() {
+  await initializeVariables()
+  addFilterButtons();
+  //let term1_button = document.querySelectorAll(".term-filter-button")[0];
+  //updateButtonStyles(term1_button);
+  updateCalendar();
+  addStyles();
 }
 
 // popup observer
 // if there is no popup, wait for it to appear
 // if there is a pop, run the program and wait for
 // the popup to close and call this funciton reccursively
-function observePopup() {
-  waitForPopup().then(() => {
-    runProgram();
+async function observePopup() {
+  await waitForPopup()
+  runProgram();
 
-    const closeObserver = new MutationObserver(() => {
-      if (!isPopupOpen()) {
-        closeObserver.disconnect();
-        observePopup();
-      }
-    });
-    closeObserver.observe(document.body, { childList: true, subtree: true });
+  const closeObserver = new MutationObserver(() => {
+    if (!isPopupOpen()) {
+      closeObserver.disconnect();
+      observePopup();
+    }
   });
+  closeObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 // start observing the popup
 function main() {
+  console.log("program ran");
   observePopup();
 }
 
-// run main when the DOM is fully loaded
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", main);
-} else {
-  main();
-}
+document.addEventListener("DOMContentLoaded", main);
