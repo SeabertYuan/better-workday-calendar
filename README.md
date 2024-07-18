@@ -11,5 +11,6 @@ To be released still! For beta testing, clone the repository and use your browse
 - [x] Turn it into an extension!
 - [ ] Bug fixes related to smaller viewports
 - [ ] Code optimization
-- [ ] Bug fixes related to reopening the calendar popup
+- [x] Bug fixes related to reopening the calendar popup
 - [ ] Ability to export calendar
+- [ ] Color by courses
