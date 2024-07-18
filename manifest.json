@@ -10,7 +10,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://wd10.myworkday.com/ubc/d/task/2998$28771.htmld"
+        "*://wd10.myworkday.com/ubc/*"
       ],
       "js": [
         "draw-calendar.js",

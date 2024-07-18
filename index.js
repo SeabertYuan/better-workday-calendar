@@ -1,21 +1,21 @@
 // initialize variables (wait for the course tables and course elements
 // to show up then initialize them)
 async function initializeVariables() {
-  TERM = 1;
-  courseTables = Array.from(await waitForElement(".css-sec5tc"));
-  courseElements = Array.from(await waitForElement(".WMSC.WKSC.WLTC.WEUC"));
+  TERM = 0;
+  courseTables = await waitForElement(".css-sec5tc");
+  courseElements = await waitForElement(".WMSC.WKSC.WLTC.WEUC");
 }
 
 // wait for an element (selector) to be loaded and then return it
 function waitForElement(selector) {
   return new Promise((resolve) => {
     if (document.querySelector(selector)) {
-      return resolve(document.querySelectorAll(selector));
+      return resolve(Array.from(document.querySelectorAll(selector)));
     }
 
     const observer = new MutationObserver(() => {
       if (document.querySelector(selector)) {
-        resolve(document.querySelectorAll(selector));
+        resolve(Array.from(document.querySelectorAll(selector)));
         observer.disconnect();
       }
     });
@@ -39,13 +39,13 @@ function waitForPopup() {
     if (isPopupOpen()) {
       resolve();
     } else {
-      const observer = new MutationObserver(() => {
+      const popupObserver = new MutationObserver(() => {
         if (isPopupOpen()) {
-          observer.disconnect();
+          popupObserver.disconnect();
           resolve();
         }
       });
-      observer.observe(document.body, { childList: true, subtree: true });
+      popupObserver.observe(document.body, { childList: true, subtree: true });
     }
   });
 }
@@ -62,8 +62,8 @@ async function runProgram() {
 }
 
 // popup observer
-// if there is no popup, wait for it to appear
-// if there is a pop, run the program and wait for
+// if there is no popup: wait for it to appear
+// if there is a pop: run the program and wait for
 // the popup to close and call this funciton reccursively
 async function observePopup() {
   await waitForPopup()
@@ -78,10 +78,36 @@ async function observePopup() {
   closeObserver.observe(document.body, { childList: true, subtree: true });
 }
 
-// start observing the popup
-function main() {
-  console.log("program ran");
-  observePopup();
+// checks if we are at the target page (View My Courses)
+function isTargetPage() {
+  return window.location.href.includes("wd10.myworkday.com/ubc/d/task/2998$28771");
 }
 
-document.addEventListener("DOMContentLoaded", main);
+// observe the current path we are at
+// if we are at the target page: start observing the popup
+// if we are not at the target page: wait until we reach there
+function observeTargetPage() {
+  if (isTargetPage()) {
+    observePopup();
+  } else {
+    const targetPageObserver = new MutationObserver(() => {
+      if (isTargetPage()) {
+        observePopup();
+        targetPageObserver.disconnect();
+      }
+    });
+    targetPageObserver.observe(document, { childList: true, subtree: true });
+  }
+}
+
+// If all the DOM content are loaded, start observing the target page
+function main() {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", observeTargetPage);
+  } else {
+    observeTargetPage();
+  }
+}
+
+// call main()
+main();
