@@ -4,6 +4,10 @@
   "description": "A browser extension that allows you to use the Workday calendar term by term.",
   "homepage_url": "https://github.com/SeabertYuan/better-workday-calendar",
   "manifest_version": 3,
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
+  },
   "content_scripts": [
     {
       "matches": [
