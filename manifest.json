@@ -5,8 +5,11 @@
   "homepage_url": "https://github.com/SeabertYuan/better-workday-calendar",
   "manifest_version": 3,
   "icons": {
-    "48": "icons/icon.svg",
-    "96": "icons/icon.svg"
+    "16": "bwc_logo16.png",
+    "32": "bwc_logo32.png",
+    "48": "bwc_logo48.png",
+    "96": "icons/icon.svg",
+    "128": "bwc_logo128.png"
   },
   "content_scripts": [
     {
