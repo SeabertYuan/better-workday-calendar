@@ -9,6 +9,7 @@ To be released still! For beta testing, clone the repository and use your browse
 ## What's next?
 
 - [x] Turn it into an extension!
+- [ ] Support full-year courses
 - [ ] Bug fixes related to smaller viewports
 - [ ] Code optimization
 - [x] Bug fixes related to reopening the calendar popup
