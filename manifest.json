@@ -18,6 +18,7 @@
       "js": [
         "draw-calendar.js",
         "process-courses.js",
+        "export-calendar.js",
         "index.js"
       ],
       "run_at": "document_start"
