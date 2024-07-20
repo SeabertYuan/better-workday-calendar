@@ -1,32 +1,9 @@
 // initialize variables (wait for the course tables and course elements
 // to show up then initialize them)
-async function initializeVariables() {
+function initializeVariables() {
   TERM = 0;
-  //courseTables = await waitForElement(".css-sec5tc");
-  courseTables = await waitForElement(".css-y9nazf");
-  console.log(courseTables[0].rows.length)
-  courseElements = await waitForElement(".WMSC.WKSC.WLTC.WEUC");
-}
-
-// wait for an element (selector) to be loaded and then return it
-function waitForElement(selector) {
-  return new Promise((resolve) => {
-    if (document.querySelector(selector)) {
-      return resolve(Array.from(document.querySelectorAll(selector)));
-    }
-
-    const observer = new MutationObserver(() => {
-      if (document.querySelector(selector)) {
-        resolve(Array.from(document.querySelectorAll(selector)));
-        observer.disconnect();
-      }
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  });
+  courseTables = document.getElementsByTagName("table");
+  courseElements = Array.from(document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"));
 }
 
 // If the popup exists (the header element that only exists in the
@@ -54,8 +31,8 @@ function waitForPopup() {
 
 // run the main program
 // initialize variables -> add buttons -> update calendar -> add styles
-async function runProgram() {
-  await initializeVariables()
+function runProgram() {
+  initializeVariables();
   addFilterButtons();
   console.log("added filter buttons");
   //let term1_button = document.querySelectorAll(".term-filter-button")[0];
