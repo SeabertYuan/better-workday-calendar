@@ -9,8 +9,10 @@ function getCourseTerms() {
   if (courseTables.length > 0) {
     let courseRows = courseTables[0].rows;
     for (let i = 2; i < courseRows.length; i++) {
-      let date = parseCourseDate(courseRows[i].childNodes[10]);
-      courseDates.add(date);
+      let startDate = parseCourseDate(courseRows[i].childNodes[10]);
+      let endDate = parseCourseDate(courseRows[i].childNodes[11]);
+      courseDates.add(startDate);
+      courseDates.add(endDate);
     }
     courseDatesArr = Array.from(courseDates);
     courseDatesArr.sort();
@@ -25,8 +27,16 @@ function parseCourseDate(courseDate) {
 }
 
 function getCourseTerm(courseRow) {
-  let courseDate = parseCourseDate(courseRow.childNodes[10]);
-  return courseDatesArr[0] - courseDate == 0 ? 1 : 2;
+  let startDate = parseCourseDate(courseRow.childNodes[10]);
+  let endDate = parseCourseDate(courseRow.childNodes[11]);
+  if (
+    courseDatesArr[0] - startDate == 0 &&
+    courseDatesArr.at(-1) - endDate == 0
+  ) {
+    return 3;
+  } else {
+    return courseDatesArr[0] - startDate == 0 ? 1 : 2;
+  }
 }
 
 function clearCourses() {
@@ -38,7 +48,7 @@ function tagCourses() {
   let courseRows = courseTables[0].rows;
   for (let i = 2; i < courseRows.length; i++) {
     let elemTerm = getCourseTerm(courseRows[i]);
-    if (TERM == 0 || TERM == elemTerm) {
+    if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
       let courseName = courseRows[i].childNodes[4].innerText.slice(0, 10);
       coursesToShow.add(courseName);
     }
@@ -50,4 +60,3 @@ function filterCourses() {
   clearCourses();
   tagCourses();
 }
-

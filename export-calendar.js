@@ -1,4 +1,5 @@
 // Collection of functions for exporting the course schedules as iCalendar
+const calendarObjects = [];
 
 function parseCourseInfo() {
   const courseRows = courseTables[0].rows;
@@ -7,7 +8,7 @@ function parseCourseInfo() {
     let courseName = getCourseName(courseRow);
     let startDay = getStartDay(courseRow);
     let endDay = getEndDay(courseRow);
-    
+
     meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
     for (let block of meeting_patterns) {
       block = block.trim();
@@ -17,6 +18,15 @@ function parseCourseInfo() {
       let location = getLocation(block);
 
       for (let dayOfWeek of daysOfWeek) {
+        let calendarObject = {
+          courseName: courseName,
+          startDay: startDay,
+          endDay: endDay,
+          startTime: startTime,
+          endTime: endTime,
+          location: location,
+        };
+        calendarObjects.push(calendarObject);
         //!!! create a js object here??
       }
     }
@@ -43,19 +53,35 @@ function getDaysOfWeek(block) {
   return days;
 }
 
+function isAm(timeSection) {
+  return timeSection.slice(5) == "a.m.";
+}
+
+function getTimeSection(block) {
+  return block.split("|")[2].trim();
+}
+
+// converts to 24-hour clock if needed
+function parseTime(time) {
+  if (isAm(time)) {
+    return time.slice(0, 4);
+  } else {
+    return `${parseInt(time.split(":")[0]) + 12}:${time.split(":")[1].slice(0, 2)}`;
+  }
+}
+
 function getStartTime(block) {
-  let time_section = block.split("|")[2].trim();
-  let start_time = time_section.split("-")[0].trim().slice(0, 5);
-  return start_time;
+  let start_time = getTimeSection(block).split("-")[0].trim();
+  return parseTime(start_time);
 }
 
 function getEndTime(block) {
-  let time_section = block.split("|")[2].trim();
-  let end_time = time_section.split("-")[1].trim().slice(0, 5);
-  return end_time;
+  let end_time = getTimeSection(block).split("-")[1].trim();
+  return parseTime(end_time);
 }
 
 function getLocation(block) {
   let loc_section = block.split("|")[3].trim();
   return loc_section;
 }
+

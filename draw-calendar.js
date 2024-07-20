@@ -21,15 +21,30 @@ function displayElements() {
       hideElement(course);
     }
   }
+  hideWaitlist();
+}
+
+function hideWaitlist() {
+  const waitlistCourses = new Set();
+  if (courseTables.length > 1) {
+    let courseRows = courseTables[1].rows;
+    for (let i = 2; i < courseRows.length; i++) {
+      let courseName = courseRows[i].childNodes[4].innerText.slice(0, 14);
+      waitlistCourses.add(courseName);
+    }
+    for (const course of courseElements) {
+      let courseName = course.innerText.slice(0, 14);
+      if (waitlistCourses.has(courseName)) {
+        hideElement(course);
+      }
+    }
+  }
 }
 
 function draw() {
   let style = document.createElement("style");
   document.head.appendChild(style);
-  style.sheet.insertRule(
-    ".WCU.wd-popup { max-width: 1000px !important; }",
-    0
-  );
+  style.sheet.insertRule(".WCU.wd-popup { max-width: 1000px !important; }", 0);
   resetCalendar();
   displayElements();
   if (TERM != 0) {
@@ -94,17 +109,19 @@ function addFilterButtons() {
 // sets the selected button to active
 function updateButtonStyles(clickedButton) {
   const buttons = document.querySelectorAll(".term-filter-button");
-  buttons.forEach(button => {
+  buttons.forEach((button) => {
     if (button == clickedButton) {
       button.classList.add("active");
     } else {
       button.classList.remove("active");
     }
-  })
+  });
 }
 
 function refreshCourseElements() {
-  courseElements = Array.from(document.querySelectorAll('.WMSC.WKSC.WLTC.WEUC'));
+  courseElements = Array.from(
+    document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"),
+  );
 }
 
 // updates the calendar
@@ -157,8 +174,9 @@ function addStyles() {
     }
   `;
 
-  const styleElement = document.createElement('style');
+  const styleElement = document.createElement("style");
   styleElement.appendChild(document.createTextNode(css));
-  
+
   document.head.appendChild(styleElement);
 }
+

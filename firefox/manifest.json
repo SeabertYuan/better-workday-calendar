@@ -1,6 +1,6 @@
 {
   "name": "Better Workday Calendar",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A browser extension that allows you to use the Workday calendar term by term.",
   "homepage_url": "https://github.com/SeabertYuan/better-workday-calendar",
   "manifest_version": 3,
