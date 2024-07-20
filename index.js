@@ -33,7 +33,6 @@ function waitForPopup() {
 // initialize variables -> add buttons -> update calendar -> add styles
 function runProgram() {
   initializeVariables();
-  parseCourseInfo();
   addFilterButtons();
   console.log("added filter buttons");
   //let term1_button = document.querySelectorAll(".term-filter-button")[0];
