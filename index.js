@@ -2,7 +2,9 @@
 // to show up then initialize them)
 async function initializeVariables() {
   TERM = 0;
-  courseTables = await waitForElement(".css-sec5tc");
+  //courseTables = await waitForElement(".css-sec5tc");
+  courseTables = await waitForElement(".css-y9nazf");
+  console.log(courseTables[0].rows.length)
   courseElements = await waitForElement(".WMSC.WKSC.WLTC.WEUC");
 }
 
@@ -55,6 +57,7 @@ function waitForPopup() {
 async function runProgram() {
   await initializeVariables()
   addFilterButtons();
+  console.log("added filter buttons");
   //let term1_button = document.querySelectorAll(".term-filter-button")[0];
   //updateButtonStyles(term1_button);
   updateCalendar();
@@ -67,6 +70,7 @@ async function runProgram() {
 // the popup to close and call this funciton reccursively
 async function observePopup() {
   await waitForPopup()
+  console.log("popup detected");
   runProgram();
 
   const closeObserver = new MutationObserver(() => {
@@ -87,6 +91,7 @@ function isTargetPage() {
 // if we are at the target page: start observing the popup
 // if we are not at the target page: wait until we reach there
 function observeTargetPage() {
+  console.log("program ran");
   if (isTargetPage()) {
     observePopup();
   } else {

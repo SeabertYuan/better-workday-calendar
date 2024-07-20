@@ -1,3 +1,5 @@
+// Collection of functions for the popup UI
+
 let courseElements;
 const WIDTH = 14.2857;
 

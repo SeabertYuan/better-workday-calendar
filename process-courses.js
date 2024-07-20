@@ -1,3 +1,5 @@
+// Collection of functions for processing course terms
+
 let TERM;
 let courseDatesArr, courseTables;
 const coursesToShow = new Set();
