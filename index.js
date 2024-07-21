@@ -6,29 +6,6 @@ function initializeVariables() {
   courseElements = Array.from(document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"));
 }
 
-// If the popup exists (the header element that only exists in the
-// popup is used as a detector)
-function isPopupOpen() {
-  return !!document.querySelector(".css-fgks37-HeaderContents");
-}
-
-// Wait for the popup to show up
-function waitForPopup() {
-  return new Promise((resolve) => {
-    if (isPopupOpen()) {
-      resolve();
-    } else {
-      const popupObserver = new MutationObserver(() => {
-        if (isPopupOpen()) {
-          popupObserver.disconnect();
-          resolve();
-        }
-      });
-      popupObserver.observe(document.body, { childList: true, subtree: true });
-    }
-  });
-}
-
 // run the main program
 // initialize variables -> add buttons -> update calendar -> add styles
 function runProgram() {
@@ -41,22 +18,47 @@ function runProgram() {
   addStyles();
 }
 
+// If the popup exists (the header element that only exists in the
+// popup is used as a detector)
+function isPopupOpen() {
+  return isTargetPage() && !!document.querySelector(".css-fgks37-HeaderContents");
+}
+
+
+let popupObserver = null;
+
+// Wait for the popup to show up
+function waitForPopup() {
+  return new Promise((resolve) => {
+    if (isPopupOpen()) {
+      resolve();
+    } else {
+      popupObserver = new MutationObserver(() => {
+        if (isPopupOpen()) {
+          popupObserver.disconnect();
+          resolve();
+        }
+      });
+      popupObserver.observe(document.body, { childList: true, subtree: true });
+    }
+  });
+}
+
 // popup observer
 // if there is no popup: wait for it to appear
 // if there is a pop: run the program and wait for
 // the popup to close and call this funciton reccursively
 async function observePopup() {
   await waitForPopup()
-  console.log("popup detected");
   runProgram();
 
-  const closeObserver = new MutationObserver(() => {
+  const popupCloseObserver = new MutationObserver(() => {
     if (!isPopupOpen()) {
-      closeObserver.disconnect();
+      popupCloseObserver.disconnect();
       observePopup();
     }
   });
-  closeObserver.observe(document.body, { childList: true, subtree: true });
+  popupCloseObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 // checks if we are at the target page (View My Courses)
@@ -71,15 +73,32 @@ function observeTargetPage() {
   console.log("program ran");
   if (isTargetPage()) {
     observePopup();
+    observeCloseTargetPage();
   } else {
     const targetPageObserver = new MutationObserver(() => {
       if (isTargetPage()) {
         observePopup();
         targetPageObserver.disconnect();
-      }
+        observeCloseTargetPage();
+      } 
     });
     targetPageObserver.observe(document, { childList: true, subtree: true });
   }
+}
+
+function observeCloseTargetPage() {
+  if (!isTargetPage()) {
+    observeTargetPage();
+  }
+  const targetPageCloseObserver = new MutationObserver(() => {
+    if (!isTargetPage()) {
+      observeTargetPage();
+      targetPageCloseObserver.disconnect();
+      popupObserver.disconnect();
+      popupObserver = null;
+    }
+  })
+  targetPageCloseObserver.observe(document, { childList: true, subtree: true });
 }
 
 // If all the DOM content are loaded, start observing the target page

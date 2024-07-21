@@ -1,4 +1,5 @@
-// Collection of functions for exporting the course schedules as iCalendar
+// Parsing the course info for calendar
+
 const calendarObjects = [];
 const dayOfWeekToNum = new Map([
   ["Sun", 0],

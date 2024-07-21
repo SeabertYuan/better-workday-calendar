@@ -1,7 +1,6 @@
-// Collection of functions for processing course terms
+// Filtering courses by term
 
-let TERM;
-let courseTables;
+let TERM, courseTables;
 const coursesToShow = new Set();
 
 function parseCourseMonth(courseDate) {
