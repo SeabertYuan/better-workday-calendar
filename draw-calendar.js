@@ -14,32 +14,32 @@ function showElement(element) {
 //displays tagged elements on calendar page
 function displayElements() {
   for (const course of courseElements) {
-    let courseName = course.innerText.slice(0, 10);
+    let courseName = course.innerText.slice(0, 14);
     if (coursesToShow.has(courseName)) {
       showElement(course);
     } else {
       hideElement(course);
     }
   }
-  hideWaitlist();
+  //hideWaitlist();
 }
 
-function hideWaitlist() {
-  const waitlistCourses = new Set();
-  if (courseTables.length > 1) {
-    let courseRows = courseTables[1].rows;
-    for (let i = 2; i < courseRows.length; i++) {
-      let courseName = courseRows[i].childNodes[4].innerText.slice(0, 14);
-      waitlistCourses.add(courseName);
-    }
-    for (const course of courseElements) {
-      let courseName = course.innerText.slice(0, 14);
-      if (waitlistCourses.has(courseName)) {
-        hideElement(course);
-      }
-    }
-  }
-}
+//function hideWaitlist() {
+//  const waitlistCourses = new Set();
+//  if (courseTables.length > 1) {
+//    let courseRows = courseTables[1].rows;
+//    for (let i = 2; i < courseRows.length; i++) {
+//      let courseName = courseRows[i].childNodes[4].innerText.slice(0, 14);
+//      waitlistCourses.add(courseName);
+//    }
+//    for (const course of courseElements) {
+//      let courseName = course.innerText.slice(0, 14);
+//      if (waitlistCourses.has(courseName)) {
+//        hideElement(course);
+//      }
+//    }
+//  }
+//}
 
 function draw() {
   let style = document.createElement("style");
@@ -179,4 +179,3 @@ function addStyles() {
 
   document.head.appendChild(styleElement);
 }
-

@@ -49,7 +49,7 @@ function tagCourses() {
   for (let i = 2; i < courseRows.length; i++) {
     let elemTerm = getCourseTerm(courseRows[i]);
     if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
-      let courseName = courseRows[i].childNodes[4].innerText.slice(0, 10);
+      let courseName = courseRows[i].childNodes[4].innerText.slice(0, 14);
       coursesToShow.add(courseName);
     }
   }
