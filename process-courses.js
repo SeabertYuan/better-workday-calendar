@@ -22,21 +22,23 @@ function getCourseTerms() {
 }
 
 function parseCourseDate(courseDate) {
-  let dateString = courseDate.innerText.replaceAll("-", "");
-  return parseInt(dateString);
+  let monthString = courseDate.innerText.split("-")[1];
+  return parseInt(monthString);
 }
 
 function getCourseTerm(courseRow) {
+  let firstTermDates = new Set([8, 9, 10, 5, 6]);
+  let secondTermDates = new Set([4, 5, 8, 9]);
   let startDate = parseCourseDate(courseRow.childNodes[10]);
   let endDate = parseCourseDate(courseRow.childNodes[11]);
-  if (
-    courseDatesArr[0] - startDate == 0 &&
-    courseDatesArr.at(-1) - endDate == 0
-  ) {
-    return 3;
-  } else {
-    return courseDatesArr[0] - startDate == 0 ? 1 : 2;
+  let term = 0;
+  if (firstTermDates.has(startDate)) {
+    term++;
   }
+  if (secondTermDates.has(endDate)) {
+    term += 2;
+  }
+  return term;
 }
 
 function clearCourses() {
