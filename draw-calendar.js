@@ -116,6 +116,9 @@ function updateCalendar() {
 
 // adds css styles
 function addStyles() {
+  // remove all the remaining styles if any
+  removeStyles();
+
   const css = `
     .term-filter-buttons {
       display: flex;
@@ -157,7 +160,15 @@ function addStyles() {
   `;
 
   const styleElement = document.createElement("style");
+  styleElement.id = "filter-button-styles";
   styleElement.appendChild(document.createTextNode(css));
 
   document.head.appendChild(styleElement);
+}
+
+function removeStyles() {
+  const styleElement = document.getElementById("filter-button-styles");
+  if (styleElement && document.head) {
+    document.head.removeChild(styleElement);
+  }
 }

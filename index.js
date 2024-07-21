@@ -11,9 +11,6 @@ function initializeVariables() {
 function runProgram() {
   initializeVariables();
   addFilterButtons();
-  console.log("added filter buttons");
-  //let term1_button = document.querySelectorAll(".term-filter-button")[0];
-  //updateButtonStyles(term1_button);
   updateCalendar();
   addStyles();
 }
@@ -92,6 +89,7 @@ function observeCloseTargetPage() {
   }
   const targetPageCloseObserver = new MutationObserver(() => {
     if (!isTargetPage()) {
+      removeStyles();
       observeTargetPage();
       targetPageCloseObserver.disconnect();
       popupObserver.disconnect();
