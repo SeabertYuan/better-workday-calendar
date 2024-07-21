@@ -1,5 +1,43 @@
 // Collection of functions for exporting the course schedules as iCalendar
 const calendarObjects = [];
+const dayOfWeekToNum = new Map([
+  ["Sun", 0],
+  ["Mon", 1],
+  ["Tue", 2],
+  ["Wed", 3],
+  ["Thu", 4],
+  ["Fri", 5],
+  ["Sat", 6]
+]);
+
+// gets the actual start date which is:
+// 1. later than the start date listed on the course table
+// 2. on dayOfWeek
+function getActualStartDate(startDay, dayOfWeek) {
+  let startDate = new Date(startDay);
+  let startDayOfWeek = startDate.getDay();
+  let dif = (dayOfWeekToNum.get(dayOfWeek) - startDayOfWeek + 7) % 7;
+  startDate.setDate(startDate.getDate() + dif);
+  return formatDate(startDate);
+}
+
+// gets the actual end date which is:
+// 1. earlier than the end date listed on the course table
+// 2. on dayOfWeek
+function getActualEndDate(endDay, dayOfWeek) {
+  let endDate = new Date(endDay);
+  let endDayOfWeek = endDate.getDay();
+  let dif = (endDayOfWeek - dayOfWeekToNum.get(dayOfWeek) + 7) % 7;
+  endDate.setDate(endDate.getDate() - dif);
+  return formatDate(endDate);
+}
+
+function formatDate(date) {
+  let year = date.getFullYear();
+  let month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+  let day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function parseCourseInfo() {
   const courseRows = courseTables[0].rows;
@@ -20,14 +58,13 @@ function parseCourseInfo() {
       for (let dayOfWeek of daysOfWeek) {
         let calendarObject = {
           courseName: courseName,
-          startDay: startDay,
-          endDay: endDay,
+          startDay: getActualStartDate(startDay, dayOfWeek),
+          endDay: getActualEndDate(endDay, dayOfWeek),
           startTime: startTime,
           endTime: endTime,
           location: location,
         };
         calendarObjects.push(calendarObject);
-        //!!! create a js object here??
       }
     }
   }
@@ -39,12 +76,10 @@ function getCourseName(courseRow) {
 
 function getStartDay(courseRow) {
   return courseRow.childNodes[10].innerText;
-  //!!! still need to calculate the "actual" start date
 }
 
 function getEndDay(courseRow) {
   return courseRow.childNodes[11].innerText;
-  //!!! still need to calculate the "actual" end date
 }
 
 function getDaysOfWeek(block) {
@@ -84,4 +119,3 @@ function getLocation(block) {
   let loc_section = block.split("|")[3].trim();
   return loc_section;
 }
-
