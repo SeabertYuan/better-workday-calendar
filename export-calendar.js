@@ -45,12 +45,12 @@ function parseCourseInfo() {
   for (let i = 2; i < courseRows.length; i++) {
     const courseRow = courseRows[i];
     let courseName = getCourseName(courseRow);
-    let startDay = getStartDay(courseRow);
-    let endDay = getEndDay(courseRow);
-
+    
     meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
     for (let block of meeting_patterns) {
       block = block.trim();
+      let startDay = getStartDay(block);
+      let endDay = getEndDay(block);
       let daysOfWeek = getDaysOfWeek(block);
       let startTime = getStartTime(block);
       let endTime = getEndTime(block);
@@ -75,12 +75,16 @@ function getCourseName(courseRow) {
   return courseRow.childNodes[4].innerText.slice(0, 14); //!!! should we exclude "_V"?
 }
 
-function getStartDay(courseRow) {
-  return courseRow.childNodes[10].innerText;
+function getStartDay(block) {
+  let startDay_section = block.split("|")[0].trim();
+  let startDay = startDay_section.split(" - ")[0].trim();
+  return startDay;
 }
 
-function getEndDay(courseRow) {
-  return courseRow.childNodes[11].innerText;
+function getEndDay(block) {
+  let endDay_section = block.split("|")[0].trim();
+  let endDay = endDay_section.split(" - ")[1].trim();
+  return endDay;
 }
 
 function getDaysOfWeek(block) {
@@ -89,20 +93,21 @@ function getDaysOfWeek(block) {
   return days;
 }
 
-function isAm(timeSection) {
-  return timeSection.slice(5) == "a.m.";
-}
-
 function getTimeSection(block) {
   return block.split("|")[2].trim();
 }
 
+function isAm(timeSection) {
+  return timeSection.split(" ")[1] = "a.m.";
+}
+
 // converts to 24-hour clock if needed
 function parseTime(time) {
+  let timeNum = time.split(" ")[0].trim();
   if (isAm(time)) {
-    return time.slice(0, 4);
+    return timeNum;
   } else {
-    return `${parseInt(time.split(":")[0]) + 12}:${time.split(":")[1].slice(0, 2)}`;
+    return `${parseInt(timeNum.split(":")[0]) + 12}:${timeNum.split(":")[1].trim()}`;
   }
 }
 
