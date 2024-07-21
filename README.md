@@ -2,11 +2,14 @@
 
 A lightweight, fast, and private extension that fixes overlapping course terms in the course calendar view on UBC workday. We hope people submit issues and feedback to keep this project alive as long as possible!
 
-### Details
+<details>
+<summary><b> Details </b></summary>
 
 This extension tags courses by their start and end dates to determine which term they should belong to. It adds buttons to allow the user to quickly display courses in their desired terms.
 
 It fixes text cutoff issues by expanding the calendar popup area and decreasing font size slightly.
+
+</details>
 
 ## Usage
 
