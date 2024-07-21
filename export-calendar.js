@@ -32,9 +32,10 @@ function getActualEndDate(endDay, dayOfWeek) {
   return formatDate(endDate);
 }
 
+// formats the Data object to "yyyy-mm-dd" format
 function formatDate(date) {
   let year = date.getFullYear();
-  let month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+  let month = String(date.getMonth() + 1).padStart(2, '0');
   let day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
