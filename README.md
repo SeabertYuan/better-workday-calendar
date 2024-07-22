@@ -21,9 +21,9 @@ It's tough to keep track of what to do so we've made a list.
 
 #### Bug fixes:
 
-- [ ] Bug where buttons show up on wrong popup
 - [ ] Compatibility with small viewports
 - [ ] Code optimization
+- [x] Bug where buttons show up on wrong popup
 - [x] Hiding waitlisted courses
 - [x] Bug fixes related to reopening the calendar popup
 
