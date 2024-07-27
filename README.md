@@ -1,6 +1,6 @@
 # Better Workday Calendar
 
-A lightweight, fast, and private extension that fixes overlapping course terms in the course calendar view on UBC workday. We hope people submit issues and feedback to keep this project alive as long as possible!
+A lightweight, fast, and private browser extension that fixes and improves various features on the course calendar view on UBC workday. We hope people submit issues and feedback to keep this project alive as long as possible!
 
 <details>
 <summary><b> Details </b></summary>
@@ -8,6 +8,8 @@ A lightweight, fast, and private extension that fixes overlapping course terms i
 This extension tags courses by their start and end dates to determine which term they should belong to. It adds buttons to allow the user to quickly display courses in their desired terms.
 
 It fixes text cutoff issues by expanding the calendar popup area and decreasing font size slightly.
+
+In version 2.0.0, we added the ability to export your courses into an ics file allowing you to import your course schedule into your favourite calendar app.
 
 </details>
 
@@ -29,8 +31,8 @@ It's tough to keep track of what to do so we've made a list.
 
 #### Features:
 
-- [ ] Ability to export calendar
 - [ ] Course colour coding
+- [x] Ability to export calendar
 - [x] Support for summer sessions
 - [x] Support full-year courses
 - [x] Turn it into an extension!

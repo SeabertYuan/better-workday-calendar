@@ -16,8 +16,8 @@ function addEvent(calendarObject) {
   return eventString;
 }
 
-async function createCalendarString() {
-  await parseCourseInfo();
+function createCalendarString() {
+  parseCourseInfo();
   let calendar =
     "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:better-workday-calendar\r\n";
   for (let calendarObject of calendarObjects) {
@@ -71,24 +71,27 @@ function generateLocation(calendarObject) {
   return `LOCATION:${calendarObject.location}\r\n`;
 }
 
-async function downloadICalFile() {
-  const iCalContent = await createCalendarString();
-  console.log(iCalContent);
-  const blob = new Blob([iCalContent], { type: "text/calendar;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
+function createExportButton() {
+  console.log("making buttons");
   const headerContents = document.querySelector(".css-fgks37-HeaderContents");
   if (!headerContents) return;
 
-  const existingDivs = headerContents.children;
-  if (existingDivs.length < 3) return;
+  const buttonDiv = document.querySelector(".toolbar-buttons");
 
   const link = document.createElement("a");
-  link.innerText = "Download";
-  link.href = url;
   link.setAttribute("download", "courses.ics");
-  headerContents.insertBefore(link, existingDivs[1]);
-  link.addEventListener("click", () => {
-    headerContents.removeChild(link);
+
+  const downloadButton = document.createElement("button");
+  downloadButton.textContent = "Export Calendar";
+  downloadButton.className = "toolbar-button";
+  downloadButton.addEventListener("click", () => {
+    const iCalContent = createCalendarString();
+    const blob = new Blob([iCalContent], {
+      type: "text/calendar;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.click();
   });
+  buttonDiv.appendChild(downloadButton);
 }

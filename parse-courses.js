@@ -49,7 +49,7 @@ function formatDate(date) {
   return `${year}-${month}-${day}`;
 }
 
-async function parseCourseInfo() {
+function parseCourseInfo() {
   const courseRows = courseTables[0].rows;
   for (let i = 2; i < courseRows.length; i++) {
     const courseRow = courseRows[i];
@@ -134,4 +134,3 @@ function getLocation(block) {
   let loc_section = block.split("|")[3].trim();
   return loc_section;
 }
-

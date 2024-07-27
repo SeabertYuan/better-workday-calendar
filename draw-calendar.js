@@ -69,13 +69,13 @@ function addFilterButtons() {
   if (existingDivs.length < 2) return;
 
   const buttonDiv = document.createElement("div");
-  buttonDiv.className = "term-filter-buttons";
+  buttonDiv.className = "toolbar-buttons";
 
   const buttons = ["Term 1", "Term 2"];
   buttons.forEach((text, index) => {
     const button = document.createElement("button");
     button.textContent = text;
-    button.className = "term-filter-button";
+    button.className = "toolbar-button";
     button.addEventListener("click", () => {
       TERM = index + 1;
       updateCalendar();
@@ -90,7 +90,7 @@ function addFilterButtons() {
 
 // sets the selected button to active
 function updateButtonStyles(clickedButton) {
-  const buttons = document.querySelectorAll(".term-filter-button");
+  const buttons = document.querySelectorAll(".toolbar-button");
   buttons.forEach((button) => {
     if (button == clickedButton) {
       button.classList.add("active");
@@ -120,7 +120,7 @@ function addStyles() {
   removeStyles();
 
   const css = `
-    .term-filter-buttons {
+    .toolbar-buttons {
       display: flex;
       gap: 10px;
       align-items: center;
@@ -128,7 +128,7 @@ function addStyles() {
       padding-inline: 10px;
     }
     
-    .term-filter-button {
+    .toolbar-button {
       padding: 5px 10px;
       background-color: #f0f0f0;
       border: 1px solid #ccc;
@@ -137,11 +137,11 @@ function addStyles() {
       transition: background-color 0.3s;
     }
     
-    .term-filter-button:not(.active):hover {
+    .toolbar-button:not(.active):hover {
       background-color: #e0e0e0;
     }
     
-    .term-filter-button.active {
+    .toolbar-button.active {
       background-color: #2391d7;
       color: white;
     }

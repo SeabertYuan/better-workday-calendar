@@ -13,6 +13,7 @@ function initializeVariables() {
 function runProgram() {
   initializeVariables();
   addFilterButtons();
+  createExportButton();
   updateCalendar();
   addStyles();
 }
@@ -51,7 +52,6 @@ function waitForPopup() {
 async function observePopup() {
   await waitForPopup();
   runProgram();
-  downloadICalFile();
 
   const popupCloseObserver = new MutationObserver(() => {
     if (!isPopupOpen()) {
@@ -116,4 +116,3 @@ function main() {
 
 // call main()
 main();
-
