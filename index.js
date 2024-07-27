@@ -3,7 +3,9 @@
 function initializeVariables() {
   TERM = 0;
   courseTables = document.getElementsByTagName("table");
-  courseElements = Array.from(document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"));
+  courseElements = Array.from(
+    document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"),
+  );
 }
 
 // run the main program
@@ -18,9 +20,10 @@ function runProgram() {
 // If the popup exists (the header element that only exists in the
 // popup is used as a detector)
 function isPopupOpen() {
-  return isTargetPage() && !!document.querySelector(".css-fgks37-HeaderContents");
+  return (
+    isTargetPage() && !!document.querySelector(".css-fgks37-HeaderContents")
+  );
 }
-
 
 let popupObserver = null;
 
@@ -46,8 +49,9 @@ function waitForPopup() {
 // if there is a pop: run the program and wait for
 // the popup to close and call this funciton reccursively
 async function observePopup() {
-  await waitForPopup()
+  await waitForPopup();
   runProgram();
+  downloadICalFile();
 
   const popupCloseObserver = new MutationObserver(() => {
     if (!isPopupOpen()) {
@@ -60,7 +64,9 @@ async function observePopup() {
 
 // checks if we are at the target page (View My Courses)
 function isTargetPage() {
-  return window.location.href.includes("wd10.myworkday.com/ubc/d/task/2998$28771");
+  return window.location.href.includes(
+    "wd10.myworkday.com/ubc/d/task/2998$28771",
+  );
 }
 
 // observe the current path we are at
@@ -77,7 +83,7 @@ function observeTargetPage() {
         observePopup();
         targetPageObserver.disconnect();
         observeCloseTargetPage();
-      } 
+      }
     });
     targetPageObserver.observe(document, { childList: true, subtree: true });
   }
@@ -95,7 +101,7 @@ function observeCloseTargetPage() {
       popupObserver.disconnect();
       popupObserver = null;
     }
-  })
+  });
   targetPageCloseObserver.observe(document, { childList: true, subtree: true });
 }
 
@@ -110,3 +116,4 @@ function main() {
 
 // call main()
 main();
+

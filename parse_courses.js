@@ -1,4 +1,12 @@
 // Parsing the course info for calendar
+//const exampleCourse = {
+//courseName: "CPSC_V 210 - 101",
+//startDay: "2024-09-03",
+//endDay: "2024-12-23",
+//startTime: "15:00",
+//endTime: "16:00",
+//location: "ICCS-Floor 2-Room X251"
+//}
 
 const calendarObjects = [];
 const dayOfWeekToNum = new Map([
@@ -8,7 +16,7 @@ const dayOfWeekToNum = new Map([
   ["Wed", 3],
   ["Thu", 4],
   ["Fri", 5],
-  ["Sat", 6]
+  ["Sat", 6],
 ]);
 
 // gets the actual start date which is:
@@ -36,17 +44,17 @@ function getActualEndDate(endDay, dayOfWeek) {
 // formats the Data object to "yyyy-mm-dd" format
 function formatDate(date) {
   let year = date.getFullYear();
-  let month = String(date.getMonth() + 1).padStart(2, '0');
-  let day = String(date.getDate()).padStart(2, '0');
+  let month = String(date.getMonth() + 1).padStart(2, "0");
+  let day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-function parseCourseInfo() {
+async function parseCourseInfo() {
   const courseRows = courseTables[0].rows;
   for (let i = 2; i < courseRows.length; i++) {
     const courseRow = courseRows[i];
     let courseName = getCourseName(courseRow);
-    
+
     meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
     for (let block of meeting_patterns) {
       block = block.trim();
@@ -99,14 +107,14 @@ function getTimeSection(block) {
 }
 
 function isAm(timeSection) {
-  return timeSection.split(" ")[1] = "a.m.";
+  return timeSection.split(" ")[1] == "a.m.";
 }
 
 // converts to 24-hour clock if needed
 function parseTime(time) {
   let timeNum = time.split(" ")[0].trim();
-  if (isAm(time)) {
-    return timeNum;
+  if (isAm(time) || parseInt(timeNum.split(":")[0]) >= 12) {
+    return ("0" + timeNum).slice(-5);
   } else {
     return `${parseInt(timeNum.split(":")[0]) + 12}:${timeNum.split(":")[1].trim()}`;
   }
@@ -126,3 +134,4 @@ function getLocation(block) {
   let loc_section = block.split("|")[3].trim();
   return loc_section;
 }
+
