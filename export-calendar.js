@@ -1,11 +1,10 @@
 // Functions pertaining to translating calendar objects into one large iCal file
 
-const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const pstTimeZone = "America/Los_Angeles"
+const pstTimeZone = "America/Vancouver";
 
 function addEvent(calendarObject) {
   const date = new Date();
-  let currTime = `DTSTAMP;TZID=${userTimeZone}:${date.getFullYear()}${("0" + (date.getMonth() + 1)).slice(-2)}${("0" + date.getDate()).slice(-2)}T${("0" + date.getHours()).slice(-2)}${("0" + date.getMinutes()).slice(-2)}${("0" + date.getSeconds()).slice(-2)}\r\n`;
+  let currTime = `DTSTAMP:${date.getFullYear()}${("0" + (date.getMonth() + 1)).slice(-2)}${("0" + date.getDate()).slice(-2)}T${("0" + date.getHours()).slice(-2)}${("0" + date.getMinutes()).slice(-2)}${("0" + date.getSeconds()).slice(-2)}\r\n`;
   let eventString = "BEGIN:VEVENT\r\nRRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=";
   eventString +=
     getEndDate(calendarObject) +
@@ -21,30 +20,13 @@ function addEvent(calendarObject) {
 }
 
 function generateVTIMEZONE() {
-  return (`
-    BEGIN:VTIMEZONE\r
-    TZID:America/Vancouver\r
-    BEGIN:STANDARD\r
-    DTSTART:20241103T090000Z\r
-    RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11\r
-    TZOFFSETFROM:-0700\r
-    TZOFFSETTO:-0800\r
-    TZNAME:PST\r
-    END:STANDARD\r
-    BEGIN:DAYLIGHT\r
-    DTSTART:20240310T100000Z\r
-    RRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3\r
-    TZOFFSETFROM:-0800\r
-    TZOFFSETTO:-0700\r
-    TZNAME:PDT\r
-    END:DAYLIGHT\r
-    `
-  );
+  return `BEGIN:VTIMEZONE\r\nTZID:America/Vancouver\r\nBEGIN:STANDARD\r\nDTSTART:20241103T090000Z\r\nRRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11\r\nTZOFFSETFROM:-0700\r\nTZOFFSETTO:-0800\r\nTZNAME:PST\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20240310T100000Z\r\nRRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3\r\nTZOFFSETFROM:-0800\r\nTZOFFSETTO:-0700\r\nTZNAME:PDT\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\n`;
 }
 
 function createCalendarString() {
   parseCourseInfo();
-  let calendar = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:better-workday-calendar\r\n";
+  let calendar =
+    "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:better-workday-calendar\r\n";
   calendar += generateVTIMEZONE();
   for (let calendarObject of calendarObjects) {
     calendar += addEvent(calendarObject);
@@ -127,3 +109,4 @@ function createExportButton() {
   });
   buttonDiv.appendChild(downloadButton);
 }
+
