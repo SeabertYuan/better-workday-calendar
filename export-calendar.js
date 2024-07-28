@@ -20,19 +20,32 @@ function addEvent(calendarObject) {
   return eventString;
 }
 
-function generateTimeZone(timeZone) {
-  return (
-    "BEGIN:VTIMEZONETZID:" +
-    timeZone +
-    "END:VTIMEZONE"
+function generateVTIMEZONE() {
+  return (`
+    BEGIN:VTIMEZONE\r
+    TZID:America/Vancouver\r
+    BEGIN:STANDARD\r
+    DTSTART:20241103T090000Z\r
+    RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11\r
+    TZOFFSETFROM:-0700\r
+    TZOFFSETTO:-0800\r
+    TZNAME:PST\r
+    END:STANDARD\r
+    BEGIN:DAYLIGHT\r
+    DTSTART:20240310T100000Z\r
+    RRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3\r
+    TZOFFSETFROM:-0800\r
+    TZOFFSETTO:-0700\r
+    TZNAME:PDT\r
+    END:DAYLIGHT\r
+    `
   );
 }
 
 function createCalendarString() {
   parseCourseInfo();
   let calendar = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:better-workday-calendar\r\n";
-  calendar += generateTimeZone(userTimeZone);
-  calendar += generateTimeZone(pstTimeZone);
+  calendar += generateVTIMEZONE();
   for (let calendarObject of calendarObjects) {
     calendar += addEvent(calendarObject);
   }
