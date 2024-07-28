@@ -8,6 +8,14 @@ function initializeVariables() {
   );
 }
 
+function fixTable() {
+  // palce this somewhere...
+  for (let courseTable of courseTables) {
+    courseTable.style = "table-layout: fixed";
+  }
+  //!!! need to write code to fix the "drop/swap" courses buttons
+}
+
 // run the main program
 // initialize variables -> add buttons -> update calendar -> add styles
 function runProgram() {
