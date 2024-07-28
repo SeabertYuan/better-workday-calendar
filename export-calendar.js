@@ -79,7 +79,9 @@ function createExportButton() {
   const buttonDiv = document.querySelector(".toolbar-buttons");
 
   const link = document.createElement("a");
-  link.setAttribute("download", "courses.ics");
+  let now = new Date();
+  let fileName = `UBC-classes-${now.getFullYear()}-${("0" + (now.getMonth() + 1)).slice(-2)}-${("0" + now.getDate()).slice(-2)}.ics`;
+  link.setAttribute("download", fileName);
 
   const downloadButton = document.createElement("button");
   downloadButton.textContent = "Export Calendar";

@@ -8,7 +8,7 @@
 //location: "ICCS-Floor 2-Room X251"
 //}
 
-const calendarObjects = [];
+var calendarObjects;
 const dayOfWeekToNum = new Map([
   ["Sun", 0],
   ["Mon", 1],
@@ -50,6 +50,7 @@ function formatDate(date) {
 }
 
 function parseCourseInfo() {
+  calendarObjects = [];
   const courseRows = courseTables[0].rows;
   for (let i = 2; i < courseRows.length; i++) {
     const courseRow = courseRows[i];
