@@ -1,7 +1,11 @@
 // Functions pertaining to translating calendar objects into one large iCal file
+
+const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const pstTimeZone = "America/Los_Angeles"
+
 function addEvent(calendarObject) {
   const date = new Date();
-  let currTime = `DTSTAMP:${date.getFullYear()}${("0" + (date.getMonth() + 1)).slice(-2)}${("0" + date.getDate()).slice(-2)}T${("0" + date.getHours()).slice(-2)}${("0" + date.getMinutes()).slice(-2)}${("0" + date.getSeconds()).slice(-2)}\r\n`;
+  let currTime = `DTSTAMP;TZID=${userTimeZone}:${date.getFullYear()}${("0" + (date.getMonth() + 1)).slice(-2)}${("0" + date.getDate()).slice(-2)}T${("0" + date.getHours()).slice(-2)}${("0" + date.getMinutes()).slice(-2)}${("0" + date.getSeconds()).slice(-2)}\r\n`;
   let eventString = "BEGIN:VEVENT\r\nRRULE:FREQ=WEEKLY;INTERVAL=1;UNTIL=";
   eventString +=
     getEndDate(calendarObject) +
@@ -16,10 +20,19 @@ function addEvent(calendarObject) {
   return eventString;
 }
 
+function generateTimeZone(timeZone) {
+  return (
+    "BEGIN:VTIMEZONETZID:" +
+    timeZone +
+    "END:VTIMEZONE"
+  );
+}
+
 function createCalendarString() {
   parseCourseInfo();
-  let calendar =
-    "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:better-workday-calendar\r\n";
+  let calendar = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:better-workday-calendar\r\n";
+  calendar += generateTimeZone(userTimeZone);
+  calendar += generateTimeZone(pstTimeZone);
   for (let calendarObject of calendarObjects) {
     calendar += addEvent(calendarObject);
   }
@@ -47,7 +60,9 @@ function generateSummary(calendarObject) {
 
 function generateStartDate(calendarObject) {
   return (
-    "DTSTART:" +
+    "DTSTART;TZID=" +
+    pstTimeZone +
+    ":" +
     calendarObject.startDay.replaceAll("-", "") +
     "T" +
     calendarObject.startTime.replaceAll(":", "") +
@@ -58,7 +73,9 @@ function generateStartDate(calendarObject) {
 
 function generateStartEndDate(calendarObject) {
   return (
-    "DTEND:" +
+    "DTEND;TZID=" +
+    pstTimeZone +
+    ":" +
     calendarObject.startDay.replaceAll("-", "") +
     "T" +
     calendarObject.endTime.replaceAll(":", "") +
