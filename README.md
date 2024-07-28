@@ -15,7 +15,7 @@ In version 2.0.0, we added the ability to export your courses into an ics file a
 
 ## Usage
 
-This extension is available on [Google Chrome](https://chromewebstore.google.com/detail/better-workday-calendar/ebgddfhinidlemocaclojkiadpknpoia) and [Firefox](https://addons.mozilla.org/en-CA/firefox/addon/better-workday-calendar/) in their respective add-on stores. After installation, the extension will display term buttons when the calendar view popup appears allowing users to filter their courses by terms!
+This extension is available on [Google Chrome](https://chromewebstore.google.com/detail/better-workday-calendar/ebgddfhinidlemocaclojkiadpknpoia) and [Firefox](https://addons.mozilla.org/en-CA/firefox/addon/better-workday-calendar/) in their respective add-on stores. After installation, the extension will display additional buttons whenever the user presses the "Calendar View" button on the "view my courses" page. When the calendar view popup appears users will be able to filter their courses by terms and export their calendar!
 
 ## What's next?
 
