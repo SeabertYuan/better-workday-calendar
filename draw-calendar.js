@@ -1,7 +1,11 @@
-// Functions for the popup UI
+// Codes relating to calendar UI
 
+// variables
 let courseElements;
 const WIDTH = 14.2857;
+
+
+// ---------------------- Courses ----------------------
 
 function hideElement(element) {
   element.style.display = "none";
@@ -23,27 +27,9 @@ function displayElements() {
   }
 }
 
-function draw() {
-  let style = document.createElement("style");
-  document.head.appendChild(style);
-  style.sheet.insertRule(".WCU.wd-popup { max-width: 1000px !important; }", 0);
-  resetCalendar();
-  displayElements();
-  if (TERM != 0) {
-    redrawCalendar();
-  }
-}
-
 function resetCalendar() {
   for (const course of courseElements) {
     showElement(course);
-  }
-}
-
-//redraws calendar with correct widths
-function redrawCalendar() {
-  for (const course of courseElements) {
-    redrawCourse(calculateFactor(course), course);
   }
 }
 
@@ -58,8 +44,43 @@ function redrawCourse(weekdayFactor, course) {
   course.style.width = `${WIDTH}%`;
 }
 
+//redraws calendar with correct widths
+function redrawCalendar() {
+  for (const course of courseElements) {
+    redrawCourse(calculateFactor(course), course);
+  }
+}
+
+function draw() {
+  let style = document.createElement("style");
+  document.head.appendChild(style);
+  style.sheet.insertRule(".WCU.wd-popup { max-width: 1000px !important; }", 0);
+  resetCalendar();
+  displayElements();
+  if (TERM != 0) {
+    redrawCalendar();
+  }
+}
+
+function refreshCourseElements() {
+  courseElements = Array.from(
+    document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"),
+  );
+}
+
+// updates the calendar
+function updateCalendar() {
+  refreshCourseElements();
+  clearCourses();
+  filterCourses();
+  draw();
+}
+
+
+// ---------------------- Toolbar Buttons ----------------------
+
 // creates filter buttons "Term 1" and "Term 2"
-function addFilterButtons() {
+function createFilterButtons() {
   // header part
   const headerContents = document.querySelector(".css-fgks37-HeaderContents");
   if (!headerContents) return;
@@ -88,6 +109,13 @@ function addFilterButtons() {
   headerContents.insertBefore(buttonDiv, existingDivs[1]);
 }
 
+// create toolbar buttons (filter and export)
+function createToolbarButtons() {
+  createFilterButtons();
+  createExportButton();
+  addToolbarButtonStyles();
+}
+
 // sets the selected button to active
 function updateButtonStyles(clickedButton) {
   const buttons = document.querySelectorAll(".toolbar-button");
@@ -100,26 +128,12 @@ function updateButtonStyles(clickedButton) {
   });
 }
 
-function refreshCourseElements() {
-  courseElements = Array.from(
-    document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"),
-  );
-}
-
-// updates the calendar
-function updateCalendar() {
-  refreshCourseElements();
-  clearCourses();
-  filterCourses();
-  draw();
-}
-
-// adds css styles
-function addStyles() {
+// adds styles to toolbar buttons
+function addToolbarButtonStyles() {
   // remove all the remaining styles if any
-  removeStyles();
+  removeStyle("toolbar-button-styles");
 
-  const css = `
+  const rule = `
     .toolbar-buttons {
       display: flex;
       gap: 10px;
@@ -161,14 +175,36 @@ function addStyles() {
 
   const styleElement = document.createElement("style");
   styleElement.id = "toolbar-button-styles";
-  styleElement.appendChild(document.createTextNode(css));
+  styleElement.appendChild(document.createTextNode(rule));
 
   document.head.appendChild(styleElement);
 }
 
-function removeStyles(id) {
+// adds styles to course tables
+function addCourseTableStyles() {
+  // remove all the remaining styles if any
+  removeStyle("course-table-styles");
+
+  let rule =
+    ".WLMM.WKMM { justify-content: center; flex-direction: column; } .WOMY.WKMY.WKMY .WDVM, .WOMY.WKMY.WKMY .WGVM, .WOMY.WKMY.WKMY .WLSM, .WOMY.WKMY.WKMY .WMSM, .WOMY.WKMY.WKMY .WEVM, .WOMY.WKMY.WKMY .WHVM, .WOMY.WKMY.WKMY .WOSM, .WOMY.WKMY.WKMY .WNSM { min-width: 70px; padding: 0 12px;} .WDHN { min-width: 70px } .WJMM { margin: 0; } .WLMM > .WJMM { padding: 0; }";
+  let styleElement = document.createElement("style");
+  styleElement.id = "course-table-styles";
+  styleElement.appendChild(document.createTextNode(rule));
+  document.head.appendChild(styleElement);
+}
+
+// remove a style with id
+function removeStyle(id) {
   const styleElement = document.getElementById(id);
   if (styleElement && document.head) {
     document.head.removeChild(styleElement);
+  }
+}
+
+// remove all the styles
+function removeStyles() {
+  const idsToRemove = ["toolbar-button-styles", "course-table-styles"];
+  for (id of idsToRemove) {
+    removeStyle(id);
   }
 }

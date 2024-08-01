@@ -84,7 +84,6 @@ function generateLocation(calendarObject) {
 }
 
 function createExportButton() {
-  console.log("making buttons");
   const headerContents = document.querySelector(".css-fgks37-HeaderContents");
   if (!headerContents) return;
 

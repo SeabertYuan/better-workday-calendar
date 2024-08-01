@@ -6,6 +6,44 @@ let windowResizeObserver = null;
 let isPopupCurrentlyOpen = false;
 let isCurrentlyTargetPage = false;
 
+
+// ---------------------- Course Tables ----------------------
+
+// check is the table is loaded
+function isTablesLoaded() {
+  let tables = document.getElementsByTagName("table");
+  return !!tables ? tables.length > 1 : false;
+}
+
+// wait for the course tables and return it
+function waitForTables() {
+  return new Promise((resolve) => {
+    if (isTablesLoaded()) {
+      return resolve(Array.from(document.getElementsByTagName("table")));
+    }
+
+    const tableObserver = new MutationObserver(() => {
+      if (isTablesLoaded()) {
+        resolve(Array.from(document.getElementsByTagName("table")));
+        tableObserver.disconnect();
+      }
+    });
+    tableObserver.observe(document.body, { childList: true, subtree: true });
+  });
+}
+
+// change the table style (to fixed)
+async function fixTable() {
+  courseTables = await waitForTables();
+
+  for (let courseTable of courseTables) {
+    courseTable.style.tableLayout = "fixed";
+  }
+
+  addCourseTableStyles();
+}
+
+
 // ---------------------- Window Size ----------------------
 
 // any operation that should be done when the window is resized
@@ -88,7 +126,7 @@ function observePopup() {
 }
 
 
-// ---------------------- Page URL ----------------------
+// ---------------------- Target Page ----------------------
 
 // check if we are at the target page (View My Courses)
 function isInTargetPage() {
@@ -107,8 +145,7 @@ function reachTargetPage() {
 
 // any operation when we dismiss from the target page
 function dismissTargetPage() {
-  removeStyles("toolbar-button-styles");
-  removeStyles("course-table-styles");
+  removeStyles();
   closePopupObserver();
   closeWindowResizeObserver();
   console.log("target page dismissed");
@@ -132,6 +169,7 @@ function handleTargetPageStateChange() {
 
 // main observer
 function observer() {
+  console.log("program ran");
   isCurrentlyTargetPage = false;
   handleTargetPageStateChange(); // initial check
 
