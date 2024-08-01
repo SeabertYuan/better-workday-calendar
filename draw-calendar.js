@@ -160,14 +160,14 @@ function addStyles() {
   `;
 
   const styleElement = document.createElement("style");
-  styleElement.id = "filter-button-styles";
+  styleElement.id = "toolbar-button-styles";
   styleElement.appendChild(document.createTextNode(css));
 
   document.head.appendChild(styleElement);
 }
 
-function removeStyles() {
-  const styleElement = document.getElementById("filter-button-styles");
+function removeStyles(id) {
+  const styleElement = document.getElementById(id);
   if (styleElement && document.head) {
     document.head.removeChild(styleElement);
   }

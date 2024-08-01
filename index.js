@@ -1,19 +1,30 @@
 // initialize variables (wait for the course tables and course elements
 // to show up then initialize them)
 function initializeVariables() {
-  TERM = 0;
-  courseTables = document.getElementsByTagName("table");
+  TERM = 0; // 0-none, 1-term 1, 2-term 2, 3-full year
   courseElements = Array.from(
     document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"),
   );
 }
 
-function fixTable() {
-  // palce this somewhere...
+async function fixTable() {
+  await waitForTables();
+  courseTables = document.getElementsByTagName("table");
+
   for (let courseTable of courseTables) {
-    courseTable.style = "table-layout: fixed";
+    courseTable.style.tableLayout = "fixed";
   }
-  //!!! need to write code to fix the "drop/swap" courses buttons
+  let rule =
+    ".WLMM.WKMM { justify-content: center; flex-direction: column; } .WOMY.WKMY.WKMY .WDVM, .WOMY.WKMY.WKMY .WGVM, .WOMY.WKMY.WKMY .WLSM, .WOMY.WKMY.WKMY .WMSM, .WOMY.WKMY.WKMY .WEVM, .WOMY.WKMY.WKMY .WHVM, .WOMY.WKMY.WKMY .WOSM, .WOMY.WKMY.WKMY .WNSM { min-width: 70px; padding: 0 12px;} .WDHN { min-width: 70px } .WJMM { margin: 0; } .WLMM > .WJMM { padding: 0; }";
+  let styleElement = document.createElement("style");
+  styleElement.id = "course-table-styles";
+  styleElement.appendChild(document.createTextNode(rule));
+  document.head.appendChild(styleElement);
+}
+
+function isTablesLoaded() {
+  let tables = document.getElementsByTagName("table");
+  return !!tables ? tables.length > 1 : false;
 }
 
 // run the main program
@@ -24,6 +35,26 @@ function runProgram() {
   createExportButton();
   updateCalendar();
   addStyles();
+}
+
+function waitForTables() {
+  return new Promise((resolve) => {
+    if (isTablesLoaded()) {
+      return resolve();
+    }
+
+    const observer = new MutationObserver(() => {
+      if (isTablesLoaded()) {
+        observer.disconnect();
+        resolve();
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  });
 }
 
 // If the popup exists (the header element that only exists in the
@@ -56,7 +87,7 @@ function waitForPopup() {
 // popup observer
 // if there is no popup: wait for it to appear
 // if there is a pop: run the program and wait for
-// the popup to close and call this funciton reccursively
+// the popup to close and call this function reccursively
 async function observePopup() {
   await waitForPopup();
   runProgram();
@@ -83,11 +114,13 @@ function isTargetPage() {
 function observeTargetPage() {
   console.log("program ran");
   if (isTargetPage()) {
+    fixTable();
     observePopup();
     observeCloseTargetPage();
   } else {
     const targetPageObserver = new MutationObserver(() => {
       if (isTargetPage()) {
+        fixTable();
         observePopup();
         targetPageObserver.disconnect();
         observeCloseTargetPage();
@@ -103,7 +136,8 @@ function observeCloseTargetPage() {
   }
   const targetPageCloseObserver = new MutationObserver(() => {
     if (!isTargetPage()) {
-      removeStyles();
+      removeStyles("toolbar-button-styles");
+      removeStyles("course-table-styles");
       observeTargetPage();
       targetPageCloseObserver.disconnect();
       popupObserver.disconnect();

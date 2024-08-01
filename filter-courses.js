@@ -9,8 +9,8 @@ function parseCourseMonth(courseDate) {
 }
 
 function getCourseTerm(courseRow) {
-  let firstTermStartMonths = new Set([8, 9, 10, 5, 6]);
-  let secondTermEndMonths = new Set([4, 5, 8, 9]);
+  let firstTermStartMonths = new Set([8, 9, 5]);
+  let secondTermEndMonths = new Set([4, 8]);
   let startMonth = parseCourseMonth(courseRow.childNodes[10]);
   let endMonth = parseCourseMonth(courseRow.childNodes[11]);
   let term = 0;
