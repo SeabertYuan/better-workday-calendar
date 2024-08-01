@@ -32,23 +32,9 @@ function resizewindow() {
   updateCalendar();
 }
 
-function debounce(func, wait) {
-  let timeout;
-  return function(...args) {
-    const context = this;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-        func.apply(context, args);
-    }, wait);
-
-  };
-}
-const debouncedResize = debounce(resizewindow, 50);
-
 // run the main program
 // initialize variables -> add buttons -> update calendar -> add styles
 function runProgram() {
-  window.addEventListener('resize', debouncedResize);
   initializeVariables();
   addFilterButtons();
   createExportButton();
@@ -109,10 +95,17 @@ function waitForPopup() {
 // the popup to close and call this function reccursively
 async function observePopup() {
   await waitForPopup();
+  const windowResizeobserver = new ResizeObserver(() => {
+    console.log('resized');
+    updateCalendar();
+  })
+  windowResizeobserver.observe(document.body, { childList: true, subtree: true });
+
   runProgram();
 
   const popupCloseObserver = new MutationObserver(() => {
     if (!isPopupOpen()) {
+      windowResizeobserver.disconnect();
       popupCloseObserver.disconnect();
       observePopup();
     }
