@@ -26,6 +26,7 @@
         "filter-courses.js",
         "parse-courses.js",
         "export-calendar.js",
+        "observer.js",
         "index.js"
       ],
       "run_at": "document_start"
