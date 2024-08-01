@@ -27,9 +27,28 @@ function isTablesLoaded() {
   return !!tables ? tables.length > 1 : false;
 }
 
+function resizewindow() {
+  console.log("resized");
+  updateCalendar();
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+        func.apply(context, args);
+    }, wait);
+
+  };
+}
+const debouncedResize = debounce(resizewindow, 50);
+
 // run the main program
 // initialize variables -> add buttons -> update calendar -> add styles
 function runProgram() {
+  window.addEventListener('resize', debouncedResize);
   initializeVariables();
   addFilterButtons();
   createExportButton();
