@@ -3,8 +3,10 @@
 // variables
 let popupObserver = null;
 let windowResizeObserver = null;
+let viewportObserver = null;
 let isPopupCurrentlyOpen = false;
 let isCurrentlyTargetPage = false;
+let isCurrentlySmallViewport = false;
 
 
 // ---------------------- Course Tables ----------------------
@@ -50,7 +52,6 @@ async function fixTable() {
 function resizeWindow() {
   if (isPopupOpen()) {
     updateCalendar();
-    console.log("resized");
   }
 }
 
@@ -58,7 +59,6 @@ function resizeWindow() {
 function openWindowResizeObserver() {
   if (!windowResizeObserver) {
     windowResizeObserver = new ResizeObserver(() => {
-      console.log('resized');
       resizeWindow();
     })
     windowResizeObserver.observe(document.body, { childList: true, subtree: true });
@@ -71,6 +71,57 @@ function closeWindowResizeObserver() {
     windowResizeObserver.disconnect();
     windowResizeObserver = null;
   }
+}
+
+
+// ---------------------- Small Viewport ----------------------
+
+// check small/large viewport
+function isInSmallViewport() {
+  return !!document.querySelector(".WMN2.WF5.WPS2");
+}
+
+// handle the switching state viewport
+function handleViewportChange() {
+  const isSmallViewport = isInSmallViewport();
+  if (isSmallViewport != isCurrentlySmallViewport) {
+    isCurrentlySmallViewport = isSmallViewport;
+    if (isSmallViewport) {
+      // any operation when changed to small viewport
+      //setupSmallViewportButtons(); -> not working
+      console.log("small viewport");
+    } else {
+      // any operation when changed to large viewport
+      //resetSmallViewportButtons(); -> not working
+      console.log("large viewport");
+    }
+  }
+}
+
+// open viewportObserver
+function openViewportObserver() {
+  if (!viewportObserver) {
+    viewportObserver = new MutationObserver(() => {
+      handleViewportChange();
+    });
+    viewportObserver.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
+// close viewportObserver
+function closeViewportObserver() {
+  if (viewportObserver) {
+    viewportObserver.disconnect();
+    viewportObserver = null;
+  }
+}
+
+// main popup observer
+// observe according to handlePopupStateChange()
+function observeViewport() {
+  isCurrentlySmallViewport = false;
+  handleViewportChange(); // initial check
+  openViewportObserver(); // mutation check
 }
 
 
@@ -109,9 +160,11 @@ function handlePopupStateChange() {
     if (isOpen) {
       // any operation when the popup is opened
       runProgram();
+      observeViewport();
       console.log("popup opened");
     } else {
       // any operation when the popup is closed
+      closeViewportObserver();
       console.log("popup closed");
     }
   }

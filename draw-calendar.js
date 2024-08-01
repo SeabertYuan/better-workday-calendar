@@ -40,8 +40,13 @@ function calculateFactor(element) {
 
 //redraws course in correct width
 function redrawCourse(weekdayFactor, course) {
-  course.style.left = `${weekdayFactor * WIDTH}%`;
-  course.style.width = `${WIDTH}%`;
+  if (isInSmallViewport()) {
+    course.style.left = "0%";
+    course.style.width = "100%";
+  } else {
+    course.style.left = `${weekdayFactor * WIDTH}%`;
+    course.style.width = `${WIDTH}%`;
+  }
 }
 
 //redraws calendar with correct widths
@@ -76,6 +81,29 @@ function updateCalendar() {
   draw();
 }
 
+// add eventlistener to the day-of-week buttons
+function setupSmallViewportButtons() {
+  if (!document.querySelector(".WF21 .WO11")) {
+    console.log("No small viewport buttons found");
+    return 1;
+  }
+  const buttons = document.querySelectorAll(".WF21 .WO11");
+  for (const button of buttons) {
+    button.addEventListener("click", updateCalendar());
+  }
+}
+
+// remove eventlistener to the day-of-week buttons
+function resetSmallViewportButtons() {
+  if (!document.querySelector(".WF21 .WO11")) {
+    console.log("No small viewport buttons found");
+    return 1;
+  }
+  const buttons = document.querySelectorAll(".WF21 .WO11");
+  for (const button of buttons) {
+    button.removeEventListener("click", updateCalendar());
+  }
+}
 
 // ---------------------- Toolbar Buttons ----------------------
 
