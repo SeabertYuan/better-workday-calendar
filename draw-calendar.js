@@ -5,7 +5,7 @@ let courseElements;
 const WIDTH = 14.2857;
 
 
-// ---------------------- Courses ----------------------
+// ---------------------- Course Display ----------------------
 
 function hideElement(element) {
   element.style.display = "none";
@@ -57,9 +57,6 @@ function redrawCalendar() {
 }
 
 function draw() {
-  let style = document.createElement("style");
-  document.head.appendChild(style);
-  style.sheet.insertRule(".WCU.wd-popup { max-width: 1000px !important; }", 0);
   resetCalendar();
   displayElements();
   if (TERM != 0) {
@@ -79,9 +76,32 @@ function updateCalendar() {
   clearCourses();
   filterCourses();
   draw();
+  console.log("calendar updated");
 }
 
-// ---------------------- Toolbar Buttons ----------------------
+async function updateDayOfWeek() {
+  const repaint = async () => {
+    for (let i = 0; i < 2; i++) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+  };
+  await repaint();
+
+  updateCalendar();
+  addDayOfWeekEventListener();
+  console.log("day of week changed");
+}
+
+function addDayOfWeekEventListener() {
+  const buttons = document.querySelectorAll("ul.WA31 li");
+  if (!buttons) return;
+  buttons.forEach(button => {
+    button.addEventListener("click", updateDayOfWeek);
+  });
+}
+
+
+// ---------------------- Other UI ----------------------
 
 // creates filter buttons "Term 1" and "Term 2"
 function createFilterButtons() {
@@ -111,13 +131,6 @@ function createFilterButtons() {
 
   // add the buttons inbetween
   headerContents.insertBefore(buttonDiv, existingDivs[1]);
-}
-
-// create toolbar buttons (filter and export)
-function createToolbarButtons() {
-  createFilterButtons();
-  createExportButton();
-  addToolbarButtonStyles();
 }
 
 // sets the selected button to active
@@ -211,4 +224,39 @@ function removeStyles() {
   for (id of idsToRemove) {
     removeStyle(id);
   }
+}
+
+function addPopupWindowStyle() {
+  const styleElement = document.createElement("style");
+  styleElement.id = "popupWindowStyle";
+  styleElement.appendChild(document.createTextNode(`
+    .WCU.wd-popup {
+      max-width: 1000px !important;
+      width: 100%;
+    }
+
+    .WPT.wd-popup-content {
+      max-width: none !important;
+      width: 100%;
+    }
+
+    @media screen and (max-width: 1250px) {
+      .WCU.wd-popup {
+        max-width: 80% !important;
+      }
+    }
+  `));
+  document.head.appendChild(styleElement);
+}
+
+// create toolbar buttons (filter and export)
+function createToolbarButtons() {
+  createFilterButtons();
+  createExportButton();
+  addToolbarButtonStyles();
+}
+
+function setupUI() {
+  createToolbarButtons();
+  addPopupWindowStyle();
 }

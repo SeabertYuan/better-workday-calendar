@@ -9,10 +9,10 @@ function initializeVariables() {
 }
 
 // run the main program
-// initialize variables -> add buttons -> update calendar -> add styles
+// initialize variables -> add UIs -> update calendar
 function runProgram() {
   initializeVariables();
-  createToolbarButtons();
+  setupUI();
   updateCalendar();
 }
 

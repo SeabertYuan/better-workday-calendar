@@ -39,41 +39,6 @@ function closeWindowResizeObserver() {
 }
 
 
-// ---------------------- Day-of-Week Buttons ----------------------
-
-function openDayOfWeekObserver() {
-  if (!dayOfWeekObserver) {
-    let target = document.getElementsByClassName("WA31");
-    if (!target) {
-      console.log("No day-of-week buttons found");
-      return;
-    }
-    target = target[0]; // <ul> of the day-of-week buttons
-
-    dayOfWeekObserver = new MutationObserver(() => {
-      updateCalendar();
-      console.log("day of week changed");
-      closeDayOfWeekObserver();
-      openDayOfWeekObserver();
-    })
-
-    dayOfWeekObserver.observe(target, { 
-      childList: true, 
-      subtree: true, 
-      attributes: true, 
-      attributeFilter: ["class"]
-    })
-  }
-}
-
-function closeDayOfWeekObserver() {
-  if (dayOfWeekObserver) {
-    dayOfWeekObserver.disconnect();
-    dayOfWeekObserver = null;
-  }
-}
-
-
 // ---------------------- Small Viewport ----------------------
 
 // check small/large viewport
@@ -93,11 +58,10 @@ function handleViewportState() {
     isCurrentlySmallViewport = isSmallViewport;
     if (isSmallViewport) {
       // any operation when changed to small viewport
-      openDayOfWeekObserver();
+      addDayOfWeekEventListener();
       console.log("small viewport");
     } else {
       // any operation when changed to large viewport
-      closeDayOfWeekObserver();
       console.log("large viewport");
     }
   }
