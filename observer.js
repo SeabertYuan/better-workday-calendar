@@ -4,9 +4,239 @@
 let popupObserver = null;
 let windowResizeObserver = null;
 let viewportObserver = null;
+let dayOfWeekObserver = null;
+
 let isPopupCurrentlyOpen = false;
 let isCurrentlyTargetPage = false;
 let isCurrentlySmallViewport = false;
+
+
+// ---------------------- Window Size ----------------------
+
+// any operation that should be done when the window is resized
+function resizeWindow() {
+  if (isPopupOpen()) {
+    updateCalendar();
+  }
+}
+
+// open windowResizeObserver
+function openWindowResizeObserver() {
+  if (!windowResizeObserver) {
+    windowResizeObserver = new ResizeObserver(() => {
+      resizeWindow();
+    })
+    windowResizeObserver.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
+// close windowResizeObserver
+function closeWindowResizeObserver() {
+  if (windowResizeObserver) {
+    windowResizeObserver.disconnect();
+    windowResizeObserver = null;
+  }
+}
+
+
+// ---------------------- Day-of-Week Buttons ----------------------
+
+function openDayOfWeekObserver() {
+  if (!dayOfWeekObserver) {
+    let target = document.getElementsByClassName("WA31");
+    if (!target) {
+      console.log("No day-of-week buttons found");
+      return;
+    }
+    target = target[0]; // <ul> of the day-of-week buttons
+
+    dayOfWeekObserver = new MutationObserver(() => {
+      updateCalendar();
+      console.log("day of week changed");
+      closeDayOfWeekObserver();
+      openDayOfWeekObserver();
+    })
+
+    dayOfWeekObserver.observe(target, { 
+      childList: true, 
+      subtree: true, 
+      attributes: true, 
+      attributeFilter: ["class"]
+    })
+  }
+}
+
+function closeDayOfWeekObserver() {
+  if (dayOfWeekObserver) {
+    dayOfWeekObserver.disconnect();
+    dayOfWeekObserver = null;
+  }
+}
+
+
+// ---------------------- Small Viewport ----------------------
+
+// check small/large viewport
+function isInSmallViewport() {
+  const calendar = document.getElementById("wd-Calendar-6$40849");
+  if (!calendar) {
+    console.log("No calendar element found");
+    return;
+  }
+  return calendar.getAttribute("data-automation-visiblerangeinterval") === "WEEK_1_DAY";
+}
+
+// handle the switching state viewport
+function handleViewportState() {
+  const isSmallViewport = isInSmallViewport();
+  if (isSmallViewport != isCurrentlySmallViewport) {
+    isCurrentlySmallViewport = isSmallViewport;
+    if (isSmallViewport) {
+      // any operation when changed to small viewport
+      openDayOfWeekObserver();
+      console.log("small viewport");
+    } else {
+      // any operation when changed to large viewport
+      closeDayOfWeekObserver();
+      console.log("large viewport");
+    }
+  }
+}
+
+// open viewportObserver
+function openViewportObserver() {
+  if (!viewportObserver) {
+    viewportObserver = new MutationObserver(() => {
+      handleViewportState();
+    });
+    viewportObserver.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
+// close viewportObserver
+function closeViewportObserver() {
+  if (viewportObserver) {
+    viewportObserver.disconnect();
+    viewportObserver = null;
+  }
+}
+
+// main popup observer
+// observe according to handlePopupStateChange()
+function observeViewport() {
+  isCurrentlySmallViewport = false;
+  handleViewportState(); // initial check
+  openViewportObserver(); // mutation check
+}
+
+
+// ---------------------- Popup ----------------------
+
+// check if popup exists
+function isPopupOpen() {
+  return (
+    isInTargetPage() && !!document.querySelector(".css-fgks37-HeaderContents")
+  );
+}
+
+// handle the switching state of popup
+function handlePopupState() {
+  const isOpen = isPopupOpen();
+  if (isOpen != isPopupCurrentlyOpen) {
+    isPopupCurrentlyOpen = isOpen;
+    if (isOpen) {
+      // any operation when the popup is opened
+      runProgram();
+      observeViewport();
+      console.log("popup opened");
+    } else {
+      // any operation when the popup is closed
+      closeViewportObserver();
+      console.log("popup closed");
+    }
+  }
+}
+
+// open popupObserver
+function openPopupObserver() {
+  if (!popupObserver) {
+    popupObserver = new MutationObserver(() => {
+      handlePopupState();
+    });
+    popupObserver.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
+// close popupObserver
+function closePopupObserver() {
+  if (popupObserver) {
+    popupObserver.disconnect();
+    popupObserver = null;
+  }
+}
+
+// main popup observer
+// observe according to handlePopupStateChange()
+function observePopup() {
+  isPopupCurrentlyOpen = false;
+  handlePopupState(); // initial check
+  openPopupObserver(); // mutation check
+}
+
+
+// ---------------------- Target Page ----------------------
+
+// check if we are at the target page (View My Courses)
+function isInTargetPage() {
+  return window.location.href.includes(
+    "wd10.myworkday.com/ubc/d/task/2998$28771",
+  );
+}
+
+// any operation when we reach the target page
+function reachTargetPage() {
+  fixTable();
+  observePopup();
+  openWindowResizeObserver();
+  console.log("target page reached");
+}
+
+// any operation when we dismiss from the target page
+function dismissTargetPage() {
+  removeStyles();
+  closePopupObserver();
+  closeWindowResizeObserver();
+  console.log("target page dismissed");
+}
+
+// handle the switch between pages
+function handleTargetPageState() {
+  const isTargetPage = isInTargetPage();
+  if (isTargetPage != isCurrentlyTargetPage) {
+    isCurrentlyTargetPage = isTargetPage;
+    if (isTargetPage) {
+      reachTargetPage();
+    } else {
+      dismissTargetPage();
+    }
+  }
+}
+
+
+// ---------------------- main observer ----------------------
+
+// main observer
+function observer() {
+  console.log("program ran");
+  isCurrentlyTargetPage = false;
+  handleTargetPageState(); // initial check
+
+  // mutation check
+  const targetPageObserver = new MutationObserver(() => {
+    handleTargetPageState();
+  });
+  targetPageObserver.observe(document.body, { childList: true, subtree: true });
+}
 
 
 // ---------------------- Course Tables ----------------------
@@ -43,192 +273,4 @@ async function fixTable() {
   }
 
   addCourseTableStyles();
-}
-
-
-// ---------------------- Window Size ----------------------
-
-// any operation that should be done when the window is resized
-function resizeWindow() {
-  if (isPopupOpen()) {
-    updateCalendar();
-  }
-}
-
-// open windowResizeObserver
-function openWindowResizeObserver() {
-  if (!windowResizeObserver) {
-    windowResizeObserver = new ResizeObserver(() => {
-      resizeWindow();
-    })
-    windowResizeObserver.observe(document.body, { childList: true, subtree: true });
-  }
-}
-
-// close windowResizeObserver
-function closeWindowResizeObserver() {
-  if (windowResizeObserver) {
-    windowResizeObserver.disconnect();
-    windowResizeObserver = null;
-  }
-}
-
-
-// ---------------------- Small Viewport ----------------------
-
-// check small/large viewport
-function isInSmallViewport() {
-  return !!document.querySelector(".WMN2.WF5.WPS2");
-}
-
-// handle the switching state viewport
-function handleViewportChange() {
-  const isSmallViewport = isInSmallViewport();
-  if (isSmallViewport != isCurrentlySmallViewport) {
-    isCurrentlySmallViewport = isSmallViewport;
-    if (isSmallViewport) {
-      // any operation when changed to small viewport
-      //setupSmallViewportButtons(); -> not working
-      console.log("small viewport");
-    } else {
-      // any operation when changed to large viewport
-      //resetSmallViewportButtons(); -> not working
-      console.log("large viewport");
-    }
-  }
-}
-
-// open viewportObserver
-function openViewportObserver() {
-  if (!viewportObserver) {
-    viewportObserver = new MutationObserver(() => {
-      handleViewportChange();
-    });
-    viewportObserver.observe(document.body, { childList: true, subtree: true });
-  }
-}
-
-// close viewportObserver
-function closeViewportObserver() {
-  if (viewportObserver) {
-    viewportObserver.disconnect();
-    viewportObserver = null;
-  }
-}
-
-// main popup observer
-// observe according to handlePopupStateChange()
-function observeViewport() {
-  isCurrentlySmallViewport = false;
-  handleViewportChange(); // initial check
-  openViewportObserver(); // mutation check
-}
-
-
-// ---------------------- Popup ----------------------
-
-// check if popup exists
-function isPopupOpen() {
-  return (
-    isInTargetPage() && !!document.querySelector(".css-fgks37-HeaderContents")
-  );
-}
-
-// open popupObserver
-function openPopupObserver() {
-  if (!popupObserver) {
-    popupObserver = new MutationObserver(() => {
-      handlePopupStateChange();
-    });
-    popupObserver.observe(document.body, { childList: true, subtree: true });
-  }
-}
-
-// close popupObserver
-function closePopupObserver() {
-  if (popupObserver) {
-    popupObserver.disconnect();
-    popupObserver = null;
-  }
-}
-
-// handle the switching state of popup
-function handlePopupStateChange() {
-  const isOpen = isPopupOpen();
-  if (isOpen != isPopupCurrentlyOpen) {
-    isPopupCurrentlyOpen = isOpen;
-    if (isOpen) {
-      // any operation when the popup is opened
-      runProgram();
-      observeViewport();
-      console.log("popup opened");
-    } else {
-      // any operation when the popup is closed
-      closeViewportObserver();
-      console.log("popup closed");
-    }
-  }
-}
-
-// main popup observer
-// observe according to handlePopupStateChange()
-function observePopup() {
-  isPopupCurrentlyOpen = false;
-  handlePopupStateChange(); // initial check
-  openPopupObserver(); // mutation check
-}
-
-
-// ---------------------- Target Page ----------------------
-
-// check if we are at the target page (View My Courses)
-function isInTargetPage() {
-  return window.location.href.includes(
-    "wd10.myworkday.com/ubc/d/task/2998$28771",
-  );
-}
-
-// any operation when we reach the target page
-function reachTargetPage() {
-  fixTable();
-  observePopup();
-  openWindowResizeObserver();
-  console.log("target page reached");
-}
-
-// any operation when we dismiss from the target page
-function dismissTargetPage() {
-  removeStyles();
-  closePopupObserver();
-  closeWindowResizeObserver();
-  console.log("target page dismissed");
-}
-
-// handle the switch between pages
-function handleTargetPageStateChange() {
-  const isTargetPage = isInTargetPage();
-  if (isTargetPage != isCurrentlyTargetPage) {
-    isCurrentlyTargetPage = isTargetPage;
-    if (isTargetPage) {
-      reachTargetPage();
-    } else {
-      dismissTargetPage();
-    }
-  }
-}
-
-
-// ---------------------- main observer ----------------------
-
-// main observer
-function observer() {
-  console.log("program ran");
-  isCurrentlyTargetPage = false;
-  handleTargetPageStateChange(); // initial check
-
-  // mutation check
-  const targetPageObserver = new MutationObserver(() => {
-    handleTargetPageStateChange();
-  });
-  targetPageObserver.observe(document.body, { childList: true, subtree: true });
 }

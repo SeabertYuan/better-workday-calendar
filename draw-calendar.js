@@ -81,30 +81,6 @@ function updateCalendar() {
   draw();
 }
 
-// add eventlistener to the day-of-week buttons
-function setupSmallViewportButtons() {
-  if (!document.querySelector(".WF21 .WO11")) {
-    console.log("No small viewport buttons found");
-    return 1;
-  }
-  const buttons = document.querySelectorAll(".WF21 .WO11");
-  for (const button of buttons) {
-    button.addEventListener("click", updateCalendar());
-  }
-}
-
-// remove eventlistener to the day-of-week buttons
-function resetSmallViewportButtons() {
-  if (!document.querySelector(".WF21 .WO11")) {
-    console.log("No small viewport buttons found");
-    return 1;
-  }
-  const buttons = document.querySelectorAll(".WF21 .WO11");
-  for (const button of buttons) {
-    button.removeEventListener("click", updateCalendar());
-  }
-}
-
 // ---------------------- Toolbar Buttons ----------------------
 
 // creates filter buttons "Term 1" and "Term 2"
