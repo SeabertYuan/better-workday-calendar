@@ -161,11 +161,12 @@ function addToolbarButtonStyles() {
     
     .toolbar-button {
       padding: 5px 10px;
-      background-color: #f0f0f0;
+      background-color: #f5f5f5;
       border: 1px solid #ccc;
       border-radius: 4px;
       cursor: pointer;
       transition: background-color 0.3s;
+      height: 30px;
     }
     
     .toolbar-button:not(.active):hover {
@@ -173,8 +174,9 @@ function addToolbarButtonStyles() {
     }
     
     .toolbar-button.active {
-      background-color: #2391d7;
+      background-color: #418ccf;
       color: white;
+      border: none;
     }
     
     .css-1i5y6dv-StyledBoxElement-StyledFlex-IconsContainer {
@@ -187,6 +189,12 @@ function addToolbarButtonStyles() {
 
     .gwt-Label.WIUC.WDVC {
       font-size: 10px
+    }
+
+    .export-button {
+      margin-inline-start: 15px;
+      border-radius: 15px;
+      padding: 5px 15px;
     }
   `;
 

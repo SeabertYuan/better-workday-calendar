@@ -87,7 +87,7 @@ function createExportButton() {
   const headerContents = document.querySelector(".css-fgks37-HeaderContents");
   if (!headerContents) return;
 
-  const buttonDiv = document.querySelector(".toolbar-buttons");
+  const toolbarDiv = document.querySelector(".toolbar-buttons");
 
   const link = document.createElement("a");
   let now = new Date();
@@ -96,7 +96,7 @@ function createExportButton() {
 
   const downloadButton = document.createElement("button");
   downloadButton.textContent = "Export Calendar";
-  downloadButton.className = "toolbar-button";
+  downloadButton.classList.add("toolbar-button", "export-button");
   downloadButton.addEventListener("click", () => {
     const iCalContent = createCalendarString();
     const blob = new Blob([iCalContent], {
@@ -106,6 +106,6 @@ function createExportButton() {
     link.href = url;
     link.click();
   });
-  buttonDiv.appendChild(downloadButton);
+  headerContents.insertBefore(downloadButton, toolbarDiv);
 }
 
