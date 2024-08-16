@@ -205,6 +205,7 @@ function addToolbarButtonStyles() {
   document.head.appendChild(styleElement);
 }
 
+/* Commented out for now
 // adds styles to course tables
 function addCourseTableStyles() {
   // remove all the remaining styles if any
@@ -217,6 +218,7 @@ function addCourseTableStyles() {
   styleElement.appendChild(document.createTextNode(rule));
   document.head.appendChild(styleElement);
 }
+*/
 
 // remove a style with id
 function removeStyle(id) {

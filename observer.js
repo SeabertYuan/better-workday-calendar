@@ -159,7 +159,7 @@ function isInTargetPage() {
 
 // any operation when we reach the target page
 function reachTargetPage() {
-  fixTable();
+  //fixTable();
   observePopup();
   openWindowResizeObserver();
   console.log("target page reached");
@@ -202,7 +202,7 @@ function observer() {
   targetPageObserver.observe(document.body, { childList: true, subtree: true });
 }
 
-
+/* Code to solve the course table cut-off issue. Commented out for now.
 // ---------------------- Course Tables ----------------------
 
 // check is the table is loaded
@@ -238,3 +238,4 @@ async function fixTable() {
 
   addCourseTableStyles();
 }
+*/
