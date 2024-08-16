@@ -7,7 +7,7 @@ A lightweight, fast, and private browser extension that fixes and improves vario
 
 This extension tags courses by their start and end dates to determine which term they should belong to. It adds buttons to allow the user to quickly display courses in their desired terms.
 
-It fixes text cutoff issues by expanding the calendar popup area and decreasing font size slightly.
+By default, long course names are cut off; this is fixed by expanding the calendar popup area and slightly decreasing font size.
 
 In version 2.0.0, we added the ability to export your courses into an ics file allowing you to import your course schedule into your favourite calendar app.
 
@@ -23,11 +23,13 @@ It's tough to keep track of what to do so we've made a list.
 
 #### Bug fixes:
 
-- [ ] Compatibility with small viewports
 - [ ] Code optimization
+- [ ] Unit testing
+- [ ] Fixing Workday bugs when viewport becomes sufficiently small
 - [x] Bug where buttons show up on wrong popup
 - [x] Hiding waitlisted courses
 - [x] Bug fixes related to reopening the calendar popup
+- [x] Compatibility with small viewports
 
 #### Features:
 
