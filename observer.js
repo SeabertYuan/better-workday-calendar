@@ -152,9 +152,12 @@ function observePopup() {
 
 // check if we are at the target page (View My Courses)
 function isInTargetPage() {
-  return window.location.href.includes(
+  const targetUrls = [
     "wd10.myworkday.com/ubc/d/task/2998$28771",
-  );
+    "wd10.myworkday.com/ubc/d/inst/1$37/10089$157357"
+  ];
+
+  return targetUrls.some(url => window.location.href.includes(url));
 }
 
 // any operation when we reach the target page
