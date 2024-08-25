@@ -29,8 +29,8 @@ function clearCourses() {
 
 //tags elements with given term
 function tagCourses() {
-  for (let courseTable of courseTables) {
-    let courseRows = courseTable.rows;
+  for (let i = 0; i < courseTables.length-1; i++) {
+    const courseRows = courseTables[i].rows;
     for (let i = 2; i < courseRows.length; i++) {
       let elemTerm = getCourseTerm(courseRows[i]);
       if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {

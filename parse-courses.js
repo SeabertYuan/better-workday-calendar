@@ -51,31 +51,33 @@ function formatDate(date) {
 
 function parseCourseInfo() {
   calendarObjects = [];
-  const courseRows = courseTables[0].rows;
-  for (let i = 2; i < courseRows.length; i++) {
-    const courseRow = courseRows[i];
-    let courseName = getCourseName(courseRow);
+  for (let i = 0; i < courseTables.length-1; i++) {
+    const courseRows = courseTables[i].rows;
+    for (let i = 2; i < courseRows.length; i++) {
+      const courseRow = courseRows[i];
+      let courseName = getCourseName(courseRow);
 
-    meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
-    for (let block of meeting_patterns) {
-      block = block.trim();
-      let startDay = getStartDay(block);
-      let endDay = getEndDay(block);
-      let daysOfWeek = getDaysOfWeek(block);
-      let startTime = getStartTime(block);
-      let endTime = getEndTime(block);
-      let location = getLocation(block);
+      meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
+      for (let block of meeting_patterns) {
+        block = block.trim();
+        let startDay = getStartDay(block);
+        let endDay = getEndDay(block);
+        let daysOfWeek = getDaysOfWeek(block);
+        let startTime = getStartTime(block);
+        let endTime = getEndTime(block);
+        let location = getLocation(block);
 
-      for (let dayOfWeek of daysOfWeek) {
-        let calendarObject = {
-          courseName: courseName,
-          startDay: getActualStartDate(startDay, dayOfWeek),
-          endDay: getActualEndDate(endDay, dayOfWeek),
-          startTime: startTime,
-          endTime: endTime,
-          location: location,
-        };
-        calendarObjects.push(calendarObject);
+        for (let dayOfWeek of daysOfWeek) {
+          let calendarObject = {
+            courseName: courseName,
+            startDay: getActualStartDate(startDay, dayOfWeek),
+            endDay: getActualEndDate(endDay, dayOfWeek),
+            startTime: startTime,
+            endTime: endTime,
+            location: location,
+          };
+          calendarObjects.push(calendarObject);
+        }
       }
     }
   }
