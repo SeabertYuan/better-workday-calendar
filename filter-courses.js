@@ -29,12 +29,14 @@ function clearCourses() {
 
 //tags elements with given term
 function tagCourses() {
-  let courseRows = courseTables[0].rows;
-  for (let i = 2; i < courseRows.length; i++) {
-    let elemTerm = getCourseTerm(courseRows[i]);
-    if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
-      let courseName = courseRows[i].childNodes[4].innerText.slice(0, 14);
-      coursesToShow.add(courseName);
+  for (let courseTable of courseTables) {
+    let courseRows = courseTable.rows;
+    for (let i = 2; i < courseRows.length; i++) {
+      let elemTerm = getCourseTerm(courseRows[i]);
+      if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
+        let courseName = courseRows[i].childNodes[4].innerText.slice(0, 14);
+        coursesToShow.add(courseName);
+      }
     }
   }
 }
