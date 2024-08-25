@@ -51,10 +51,10 @@ function formatDate(date) {
 
 function parseCourseInfo() {
   calendarObjects = [];
-  for (let i = 0; i < courseTables.length-1; i++) {
+  for (let i = 0; i < courseTables.length - 1; i++) {
     const courseRows = courseTables[i].rows;
-    for (let i = 2; i < courseRows.length; i++) {
-      const courseRow = courseRows[i];
+    for (let j = 2; j < courseRows.length; j++) {
+      const courseRow = courseRows[j];
       let courseName = getCourseName(courseRow);
 
       meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
