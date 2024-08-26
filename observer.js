@@ -10,7 +10,6 @@ let isPopupCurrentlyOpen = false;
 let isCurrentlyTargetPage = false;
 let isCurrentlySmallViewport = false;
 
-
 // ---------------------- Window Size ----------------------
 
 // any operation that should be done when the window is resized
@@ -25,8 +24,11 @@ function openWindowResizeObserver() {
   if (!windowResizeObserver) {
     windowResizeObserver = new ResizeObserver(() => {
       resizeWindow();
-    })
-    windowResizeObserver.observe(document.body, { childList: true, subtree: true });
+    });
+    windowResizeObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
   }
 }
 
@@ -38,7 +40,6 @@ function closeWindowResizeObserver() {
   }
 }
 
-
 // ---------------------- Small Viewport ----------------------
 
 // check small/large viewport
@@ -48,7 +49,10 @@ function isInSmallViewport() {
     console.log("No calendar element found");
     return;
   }
-  return calendar.getAttribute("data-automation-visiblerangeinterval") === "WEEK_1_DAY";
+  return (
+    calendar.getAttribute("data-automation-visiblerangeinterval") ===
+    "WEEK_1_DAY"
+  );
 }
 
 // handle the switching state viewport
@@ -92,7 +96,6 @@ function observeViewport() {
   handleViewportState(); // initial check
   openViewportObserver(); // mutation check
 }
-
 
 // ---------------------- Popup ----------------------
 
@@ -147,17 +150,16 @@ function observePopup() {
   openPopupObserver(); // mutation check
 }
 
-
 // ---------------------- Target Page ----------------------
 
 // check if we are at the target page (View My Courses)
 function isInTargetPage() {
   const targetUrls = [
     "wd10.myworkday.com/ubc/d/task/2998$28771",
-    "wd10.myworkday.com/ubc/d/inst/1$37/10089$157357"
+    "wd10.myworkday.com/ubc/d/inst/1$37/10089$28965",
   ];
 
-  return targetUrls.some(url => window.location.href.includes(url));
+  return targetUrls.some((url) => window.location.href.includes(url));
 }
 
 // any operation when we reach the target page
@@ -189,7 +191,6 @@ function handleTargetPageState() {
   }
 }
 
-
 // ---------------------- main observer ----------------------
 
 // main observer
@@ -204,7 +205,6 @@ function observer() {
   });
   targetPageObserver.observe(document.body, { childList: true, subtree: true });
 }
-
 
 // ---------------------- Course Tables ----------------------
 
@@ -243,3 +243,4 @@ async function fixTable() {
   //
   //addCourseTableStyles();
 }
+
