@@ -156,7 +156,7 @@ function observePopup() {
 function isInTargetPage() {
   const targetUrls = [
     "wd10.myworkday.com/ubc/d/task/2998$28771",
-    "wd10.myworkday.com/ubc/d/inst/1$37/10089$28965",
+    "wd10.myworkday.com/ubc/d/inst/1$37/10089",
   ];
 
   return targetUrls.some((url) => window.location.href.includes(url));
@@ -243,4 +243,3 @@ async function fixTable() {
   //
   //addCourseTableStyles();
 }
-
