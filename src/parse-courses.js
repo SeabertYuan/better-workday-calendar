@@ -137,3 +137,8 @@ function getLocation(block) {
   let loc_section = block.split("|")[3].trim();
   return loc_section;
 }
+
+// ----------- Export Modules -------------
+module.exports = {
+  getCourseName
+};
