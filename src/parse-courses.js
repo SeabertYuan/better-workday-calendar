@@ -140,5 +140,5 @@ function getLocation(block) {
 
 // ----------- Export Modules -------------
 module.exports = {
-  getCourseName
+  getCourseName,
 };
