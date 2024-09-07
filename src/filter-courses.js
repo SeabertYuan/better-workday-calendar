@@ -45,10 +45,15 @@ function parseCourseMonth(courseDate) {
 }
 
 function getCourseTerm(courseRow) {
-  let firstTermStartMonths = new Set([8, 9, 5]);
-  let secondTermEndMonths = new Set([4, 8]);
   let startMonth = parseCourseMonth(courseRow.childNodes[10]);
   let endMonth = parseCourseMonth(courseRow.childNodes[11]);
+  return calculateCourseTerm(startMonth, endMonth);
+}
+
+// takes a start and end month, returns the term (3 if full year)
+function calculateCourseTerm(startMonth, endMonth) {
+  let firstTermStartMonths = new Set([8, 9, 5]);
+  let secondTermEndMonths = new Set([4, 8]);
   let term = 0;
   if (firstTermStartMonths.has(startMonth)) {
     term++;
