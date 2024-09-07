@@ -20,7 +20,7 @@ const dayOfWeekToNum = new Map([
 ]);
 
 // gets the actual start date which is:
-// 1. later than the start date listed on the course table
+// 1. later than or equal to the start date listed on the course table
 // 2. on dayOfWeek
 function getActualStartDate(startDay, dayOfWeek) {
   let startDate = new Date(startDay);
@@ -57,7 +57,7 @@ function parseCourseInfo() {
       const courseRow = courseRows[j];
       let courseName = getCourseName(courseRow);
 
-      meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
+      let meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
       for (let block of meeting_patterns) {
         block = block.trim();
         let startDay = getStartDay(block);
@@ -102,7 +102,14 @@ function getEndDay(block) {
 function getDaysOfWeek(block) {
   let day_section = block.split("|")[1].trim();
   let days = day_section.split(" ");
+  handleExceptionalDays(days);
   return days;
+}
+
+function handleExceptionalDays(days) {
+  for (let i = 0; i < days.length; i++) {
+    if (!dayOfWeekToNum.has(days[i])) days.splice(i, 1);
+  }
 }
 
 function getTimeSection(block) {
