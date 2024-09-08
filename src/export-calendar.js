@@ -2,6 +2,39 @@
 
 const pstTimeZone = "America/Vancouver";
 
+function generateVTIMEZONE() {
+  return `BEGIN:VTIMEZONE\r\nTZID:America/Vancouver\r\nBEGIN:STANDARD\r\nDTSTART:20241103T090000Z\r\nRRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11\r\nTZOFFSETFROM:-0700\r\nTZOFFSETTO:-0800\r\nTZNAME:PST\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20240310T100000Z\r\nRRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3\r\nTZOFFSETFROM:-0800\r\nTZOFFSETTO:-0700\r\nTZNAME:PDT\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\n`;
+}
+
+function createExportButton() {
+  const headerContents = document.querySelector(".css-fgks37-HeaderContents");
+  if (!headerContents) return;
+
+  const toolbarDiv = document.querySelector(".toolbar-buttons");
+
+  const link = document.createElement("a");
+  let now = new Date();
+  let fileName = `UBC-classes-${now.getFullYear()}-${("0" + (now.getMonth() + 1)).slice(-2)}-${("0" + now.getDate()).slice(-2)}.ics`;
+  link.setAttribute("download", fileName);
+
+  const downloadButton = document.createElement("button");
+  downloadButton.textContent = "Export Calendar";
+  downloadButton.classList.add("toolbar-button", "export-button");
+  downloadButton.addEventListener("click", () => {
+    const iCalContent = createCalendarString();
+    const blob = new Blob([iCalContent], {
+      type: "text/calendar;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.click();
+  });
+  headerContents.insertBefore(downloadButton, toolbarDiv);
+}
+
+
+// ---------------------- Logics (Testable) ----------------------
+
 function addEvent(calendarObject) {
   const date = new Date();
   let currTime = `DTSTAMP:${date.getFullYear()}${("0" + (date.getMonth() + 1)).slice(-2)}${("0" + date.getDate()).slice(-2)}T${("0" + date.getHours()).slice(-2)}${("0" + date.getMinutes()).slice(-2)}${("0" + date.getSeconds()).slice(-2)}\r\n`;
@@ -17,10 +50,6 @@ function addEvent(calendarObject) {
     generateLocation(calendarObject) +
     "END:VEVENT\r\n";
   return eventString;
-}
-
-function generateVTIMEZONE() {
-  return `BEGIN:VTIMEZONE\r\nTZID:America/Vancouver\r\nBEGIN:STANDARD\r\nDTSTART:20241103T090000Z\r\nRRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11\r\nTZOFFSETFROM:-0700\r\nTZOFFSETTO:-0800\r\nTZNAME:PST\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:20240310T100000Z\r\nRRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3\r\nTZOFFSETFROM:-0800\r\nTZOFFSETTO:-0700\r\nTZNAME:PDT\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\n`;
 }
 
 function createCalendarString() {
@@ -82,30 +111,3 @@ function generateStartEndDate(calendarObject) {
 function generateLocation(calendarObject) {
   return `LOCATION:${calendarObject.location}\r\n`;
 }
-
-function createExportButton() {
-  const headerContents = document.querySelector(".css-fgks37-HeaderContents");
-  if (!headerContents) return;
-
-  const toolbarDiv = document.querySelector(".toolbar-buttons");
-
-  const link = document.createElement("a");
-  let now = new Date();
-  let fileName = `UBC-classes-${now.getFullYear()}-${("0" + (now.getMonth() + 1)).slice(-2)}-${("0" + now.getDate()).slice(-2)}.ics`;
-  link.setAttribute("download", fileName);
-
-  const downloadButton = document.createElement("button");
-  downloadButton.textContent = "Export Calendar";
-  downloadButton.classList.add("toolbar-button", "export-button");
-  downloadButton.addEventListener("click", () => {
-    const iCalContent = createCalendarString();
-    const blob = new Blob([iCalContent], {
-      type: "text/calendar;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.click();
-  });
-  headerContents.insertBefore(downloadButton, toolbarDiv);
-}
-
