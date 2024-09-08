@@ -102,14 +102,14 @@ function getEndDay(block) {
 function getDaysOfWeek(block) {
   let day_section = block.split("|")[1].trim();
   let days = day_section.split(" ");
-  handleExceptionalDays(days);
-  return days;
+  return handleExceptionalDays(days);
 }
 
 function handleExceptionalDays(days) {
-  for (let i = 0; i < days.length; i++) {
+  for (let i = days.length; i >= 0; i--) {
     if (!dayOfWeekToNum.has(days[i])) days.splice(i, 1);
   }
+  return days;
 }
 
 function getTimeSection(block) {

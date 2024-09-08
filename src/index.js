@@ -5,7 +5,6 @@ function initializeVariables() {
   courseElements = Array.from(
     document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"),
   );
-  console.log(courseElements.length);
 }
 
 // run the main program
