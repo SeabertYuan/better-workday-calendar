@@ -34,8 +34,8 @@ function resetCalendar() {
 }
 
 //returns weekdayFactor (number of "widths" away from the left)
-function calculateFactor(element) {
-  return Math.floor(element.style.left.slice(0, -1) / WIDTH);
+function getWeekdayFactor(element) {
+  return calculateFactor(element.style.left.slice(0, -1));
 }
 
 //redraws course in correct width
@@ -52,7 +52,7 @@ function redrawCourse(weekdayFactor, course) {
 //redraws calendar with correct widths
 function redrawCalendar() {
   for (const course of courseElements) {
-    redrawCourse(calculateFactor(course), course);
+    redrawCourse(getWeekdayFactor(course), course);
   }
 }
 
@@ -98,6 +98,11 @@ function addDayOfWeekEventListener() {
   buttons.forEach(button => {
     button.addEventListener("click", updateDayOfWeek);
   });
+}
+
+// ---------------------- Logics (Testable) ----------------------
+function calculateFactor(leftPos) {
+  return Math.floor(leftPos / WIDTH);
 }
 
 

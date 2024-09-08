@@ -67,7 +67,7 @@ function filterCourses() {
   tagCourses();
 }
 
-// ---------------------- Logics ----------------------
+// ---------------------- Logics (Testable) ----------------------
 
 // check if the tables exist
 function DoTablesExist(tables) {
