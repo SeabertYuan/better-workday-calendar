@@ -3,10 +3,11 @@
 let TERM, courseTables;
 const coursesToShow = new Set();
 
-// check is the table is loaded
+// --------- Getters (DOM dependent) ----------
+// check if the table is loaded
 function isTablesLoaded() {
   let tables = document.getElementsByTagName("table");
-  return !!tables ? tables.length > 1 : false;
+  return DoTablesExist(tables);
 }
 
 // wait for the course tables and return it
@@ -50,6 +51,16 @@ function getCourseTerm(courseRow) {
   return calculateCourseTerm(startMonth, endMonth);
 }
 
+// --------- Logics ----------
+// check if the tables exist
+function DoTablesExist(tables) {
+  return !!tables ? tables.length > 1 : false;
+}
+
+function clearCourses() {
+  coursesToShow.clear();
+}
+
 // takes a start and end month, returns the term (3 if full year)
 function calculateCourseTerm(startMonth, endMonth) {
   let firstTermStartMonths = new Set([8, 9, 5]);
@@ -62,10 +73,6 @@ function calculateCourseTerm(startMonth, endMonth) {
     term += 2;
   }
   return term;
-}
-
-function clearCourses() {
-  coursesToShow.clear();
 }
 
 //tags elements with given term
