@@ -3,7 +3,6 @@
 let TERM, courseTables;
 const coursesToShow = new Set();
 
-// --------- Getters (DOM dependent) ----------
 // check if the table is loaded
 function isTablesLoaded() {
   let tables = document.getElementsByTagName("table");
@@ -51,7 +50,25 @@ function getCourseTerm(courseRow) {
   return calculateCourseTerm(startMonth, endMonth);
 }
 
-// --------- Logics ----------
+//tags elements with given term
+function tagCourses() {
+  for (let i = 0; i < courseTables.length - 1; i++) {
+    const courseRows = courseTables[i].rows;
+    for (let j = 2; j < courseRows.length; j++) {
+      let elemTerm = getCourseTerm(courseRows[j]);
+      let courseName = courseRows[j].courseRow.childNodes[4].innerText.slice(0, 14);
+      addCourseIfTermMatches(elemTerm, courseName);
+    }
+  }
+}
+
+function filterCourses() {
+  clearCourses();
+  tagCourses();
+}
+
+// ---------------------- Logics ----------------------
+
 // check if the tables exist
 function DoTablesExist(tables) {
   return !!tables ? tables.length > 1 : false;
@@ -75,21 +92,9 @@ function calculateCourseTerm(startMonth, endMonth) {
   return term;
 }
 
-//tags elements with given term
-function tagCourses() {
-  for (let i = 0; i < courseTables.length - 1; i++) {
-    const courseRows = courseTables[i].rows;
-    for (let j = 2; j < courseRows.length; j++) {
-      let elemTerm = getCourseTerm(courseRows[j]);
-      if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
-        let courseName = courseRows[j].childNodes[4].innerText.slice(0, 14);
-        coursesToShow.add(courseName);
-      }
-    }
+function addCourseIfTermMatches(elemTerm, courseName) {
+  if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
+    coursesToShow.add(courseName);
   }
 }
 
-function filterCourses() {
-  clearCourses();
-  tagCourses();
-}
