@@ -56,7 +56,7 @@ function tagCourses() {
     const courseRows = courseTables[i].rows;
     for (let j = 2; j < courseRows.length; j++) {
       let elemTerm = getCourseTerm(courseRows[j]);
-      let courseName = courseRows[j].courseRow.childNodes[4].innerText.slice(0, 14);
+      let courseName = courseRows[j].childNodes[4].innerText.slice(0, 14);
       addCourseIfTermMatches(elemTerm, courseName);
     }
   }
