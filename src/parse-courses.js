@@ -147,4 +147,4 @@ function getLocation(block) {
   return loc_section;
 }
 
-module.exports = { getActualStartDate };
+module.exports = { getActualStartDate, getActualEndDate };
