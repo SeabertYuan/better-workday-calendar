@@ -70,16 +70,19 @@ function getActualStartDate(startDay, dayOfWeek) {
   return formatDate(startDate);
 }
 
-// 0 is Sunday, 6 is Saturday
+// Formula obtained from https://cs.uwaterloo.ca/~alopez-o/math-faq/node73.html#:~:text=For%20a%20Gregorian%20date%2C%20add,7%20and%20take%20the%20remainder.
+// input: int year, int month, int day
+// output: int, 0 is Sunday → 6 is Saturday
 function getDayOfWeek(year, month, day) {
-  const k = day
-  const m = (month + 10) % 12
-  const C = Math.floor(year/100)
-  const Y = ((month == 1 || month == 2) ? (year + 99) % 100 : year % 100);
-  return (k + Math.floor(2.6*m - 0.2) - 2*C + Y + Math.floor(Y/4) + Math.floor(C/4) + 7) % 7;
+  // treat Jan and Feb as months of the preceding year
+  if (month == 1 || month == 2) year -= 1;
+  const k = day;
+  const m = (month + 9) % 12 + 1;
+  const C = Math.floor(year/100);
+  const Y = year % 100;
+  const W = (k + Math.floor(2.6*m - 0.2) - 2*C + Y + Math.floor(Y/4) + Math.floor(C/4)) % 7;
+  return (W + 7) % 7;
 }
-
-console.log(getDayOfWeek(2000, 1, 1));
 
 // gets the actual end date which is:
 // 1. earlier than the end date listed on the course table
