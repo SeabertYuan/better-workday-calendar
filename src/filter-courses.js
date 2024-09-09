@@ -3,10 +3,10 @@
 let TERM, courseTables;
 const coursesToShow = new Set();
 
-// check is the table is loaded
+// check if the table is loaded
 function isTablesLoaded() {
   let tables = document.getElementsByTagName("table");
-  return !!tables ? tables.length > 1 : false;
+  return DoTablesExist(tables);
 }
 
 // wait for the course tables and return it
@@ -50,6 +50,34 @@ function getCourseTerm(courseRow) {
   return calculateCourseTerm(startMonth, endMonth);
 }
 
+//tags elements with given term
+function tagCourses() {
+  for (let i = 0; i < courseTables.length - 1; i++) {
+    const courseRows = courseTables[i].rows;
+    for (let j = 2; j < courseRows.length; j++) {
+      let elemTerm = getCourseTerm(courseRows[j]);
+      let courseName = courseRows[j].childNodes[4].innerText.slice(0, 14);
+      addCourseIfTermMatches(elemTerm, courseName);
+    }
+  }
+}
+
+function filterCourses() {
+  clearCourses();
+  tagCourses();
+}
+
+// ---------------------- Logics (Testable) ----------------------
+
+// check if the tables exist
+function DoTablesExist(tables) {
+  return !!tables ? tables.length > 1 : false;
+}
+
+function clearCourses() {
+  coursesToShow.clear();
+}
+
 // takes a start and end month, returns the term (3 if full year)
 function calculateCourseTerm(startMonth, endMonth) {
   let firstTermStartMonths = new Set([8, 9, 5]);
@@ -64,25 +92,9 @@ function calculateCourseTerm(startMonth, endMonth) {
   return term;
 }
 
-function clearCourses() {
-  coursesToShow.clear();
-}
-
-//tags elements with given term
-function tagCourses() {
-  for (let i = 0; i < courseTables.length - 1; i++) {
-    const courseRows = courseTables[i].rows;
-    for (let j = 2; j < courseRows.length; j++) {
-      let elemTerm = getCourseTerm(courseRows[j]);
-      if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
-        let courseName = courseRows[j].childNodes[4].innerText.slice(0, 14);
-        coursesToShow.add(courseName);
-      }
-    }
+function addCourseIfTermMatches(elemTerm, courseName) {
+  if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
+    coursesToShow.add(courseName);
   }
 }
 
-function filterCourses() {
-  clearCourses();
-  tagCourses();
-}

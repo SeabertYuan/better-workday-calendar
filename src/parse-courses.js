@@ -19,36 +19,6 @@ const dayOfWeekToNum = new Map([
   ["Sat", 6],
 ]);
 
-// gets the actual start date which is:
-// 1. later than or equal to the start date listed on the course table
-// 2. on dayOfWeek
-function getActualStartDate(startDay, dayOfWeek) {
-  let startDate = new Date(startDay);
-  let startDayOfWeek = startDate.getDay();
-  let dif = (dayOfWeekToNum.get(dayOfWeek) - startDayOfWeek + 7) % 7;
-  startDate.setDate(startDate.getDate() + dif);
-  return formatDate(startDate);
-}
-
-// gets the actual end date which is:
-// 1. earlier than the end date listed on the course table
-// 2. on dayOfWeek
-function getActualEndDate(endDay, dayOfWeek) {
-  let endDate = new Date(endDay);
-  let endDayOfWeek = endDate.getDay();
-  let dif = (endDayOfWeek - dayOfWeekToNum.get(dayOfWeek) + 7) % 7;
-  endDate.setDate(endDate.getDate() - dif);
-  return formatDate(endDate);
-}
-
-// formats the Data object to "yyyy-mm-dd" format
-function formatDate(date) {
-  let year = date.getFullYear();
-  let month = String(date.getMonth() + 1).padStart(2, "0");
-  let day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function parseCourseInfo() {
   calendarObjects = [];
   for (let i = 0; i < courseTables.length - 1; i++) {
@@ -84,7 +54,39 @@ function parseCourseInfo() {
 }
 
 function getCourseName(courseRow) {
-  return courseRow.childNodes[4].innerText.slice(0, 14); //!!! should we exclude "_V"?
+  return courseRow.childNodes[4].innerText.slice(0, 14);
+}
+
+// ---------------------- Logics (Testable) ----------------------
+
+// gets the actual start date which is:
+// 1. later than the start date listed on the course table
+// 2. on dayOfWeek
+function getActualStartDate(startDay, dayOfWeek) {
+  let startDate = new Date(startDay);
+  let startDayOfWeek = startDate.getDay();
+  let dif = (dayOfWeekToNum.get(dayOfWeek) - startDayOfWeek + 7) % 7;
+  startDate.setDate(startDate.getDate() + dif);
+  return formatDate(startDate);
+}
+
+// gets the actual end date which is:
+// 1. earlier than the end date listed on the course table
+// 2. on dayOfWeek
+function getActualEndDate(endDay, dayOfWeek) {
+  let endDate = new Date(endDay);
+  let endDayOfWeek = endDate.getDay();
+  let dif = (endDayOfWeek - dayOfWeekToNum.get(dayOfWeek) + 7) % 7;
+  endDate.setDate(endDate.getDate() - dif);
+  return formatDate(endDate);
+}
+
+// formats the Data object to "yyyy-mm-dd" format
+function formatDate(date) {
+  let year = date.getFullYear();
+  let month = String(date.getMonth() + 1).padStart(2, "0");
+  let day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getStartDay(block) {
@@ -144,8 +146,3 @@ function getLocation(block) {
   let loc_section = block.split("|")[3].trim();
   return loc_section;
 }
-
-// ----------- Export Modules -------------
-module.exports = {
-  getCourseName,
-};
