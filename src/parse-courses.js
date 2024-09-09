@@ -27,7 +27,7 @@ function parseCourseInfo() {
       const courseRow = courseRows[j];
       let courseName = getCourseName(courseRow);
 
-      meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
+      let meeting_patterns = courseRow.childNodes[7].innerText.split("\n");
       for (let block of meeting_patterns) {
         block = block.trim();
         let startDay = getStartDay(block);
@@ -61,7 +61,7 @@ function getCourseName(courseRow) {
 // ---------------------- Logics (Testable) ----------------------
 
 // gets the actual start date which is:
-// 1. later than the start date listed on the course table
+// 1. later than or equal to the start date listed on the course table
 // 2. on dayOfWeek
 function getActualStartDate(startDay, dayOfWeek) {
   let startDate = new Date(startDay);
@@ -72,7 +72,7 @@ function getActualStartDate(startDay, dayOfWeek) {
 }
 
 // gets the actual end date which is:
-// 1. earlier than the end date listed on the course table
+// 1. earlier than or equal to the end date listed on the course table
 // 2. on dayOfWeek
 function getActualEndDate(endDay, dayOfWeek) {
   let endDate = new Date(endDay);
