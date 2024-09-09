@@ -1,19 +1,9 @@
-const { JSDOM } = require("jsdom");
-const fs = require("fs");
-const path = require("path");
-const { getCourseName } = require("../src/parse-courses");
+const { getActualStartDate } = require("../src/parse-courses");
 
-test("tests getCourseName gets the course name", () => {
-  //!!! need to add an example HTML case
-  const filePath = path.resolve(__dirname, "testPage.html");
-  const htmlContent = fs.readFileSync(filePath, "utf8");
+test("tests getActualStartDate gets the actual start date on day after start date", () => {
+  expect(getActualStartDate("2024-09-07", "Mon")).toBe("2024-09-09");
+});
 
-  const dom = new JSDOM(htmlContent);
-  const document = dom.window.document;
-
-  let courseTables = document.getElementsByTagName("table");
-  let courseRow = courseTables[0].rows[3];
-  console.log(courseRow);
-
-  expect(getCourseName(courseRow)).toBe("CPSC_V 213-101");
+test("tests getActualStartDate gets the actual start date on 6 days after date", () => {
+  expect(getActualStartDate("2024-09-03", "Mon")).toBe("2024-09-09");
 });
