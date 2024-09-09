@@ -70,6 +70,17 @@ function getActualStartDate(startDay, dayOfWeek) {
   return formatDate(startDate);
 }
 
+// 0 is Sunday, 6 is Saturday
+function getDayOfWeek(year, month, day) {
+  const k = day
+  const m = (month + 10) % 12
+  const C = Math.floor(year/100)
+  const Y = ((month == 1 || month == 2) ? (year + 99) % 100 : year % 100);
+  return (k + Math.floor(2.6*m - 0.2) - 2*C + Y + Math.floor(Y/4) + Math.floor(C/4) + 7) % 7;
+}
+
+console.log(getDayOfWeek(2000, 1, 1));
+
 // gets the actual end date which is:
 // 1. earlier than the end date listed on the course table
 // 2. on dayOfWeek
@@ -147,4 +158,4 @@ function getLocation(block) {
   return loc_section;
 }
 
-module.exports = { getActualStartDate };
+module.exports = { getActualStartDate, getDayOfWeek };
