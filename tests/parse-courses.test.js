@@ -1,4 +1,8 @@
-const { getActualStartDate, getDayOfWeek } = require("../src/parse-courses");
+const {
+  getActualStartDate,
+  getActualEndDate,
+  getDayOfWeek,
+} = require("../src/parse-courses");
 
 test("tests getActualStartDate gets the actual start date on day after start date", () => {
   expect(getActualStartDate("2024-09-07", "Mon")).toBe("2024-09-09");

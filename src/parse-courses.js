@@ -161,4 +161,8 @@ function getLocation(block) {
   return loc_section;
 }
 
-module.exports = { getActualStartDate, getDayOfWeek };
+module.exports = {
+  getActualStartDate,
+  getActualEndDate,
+  getDayOfWeek
+};
