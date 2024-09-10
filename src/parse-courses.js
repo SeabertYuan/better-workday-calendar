@@ -110,14 +110,6 @@ function getActualEndDate(endDay, dayOfWeek) {
   return `${endDateVals[0]}-${endDateVals[1]}-${endDateVals[2].padStart(2, "0")}`;
 }
 
-// formats the Data object to "yyyy-mm-dd" format
-function formatDate(date) {
-  let year = date.getFullYear();
-  let month = String(date.getMonth() + 1).padStart(2, "0");
-  let day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function getStartDay(block) {
   let startDay_section = block.split("|")[0].trim();
   let startDay = startDay_section.split(" - ")[0].trim();
