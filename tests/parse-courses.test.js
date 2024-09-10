@@ -16,11 +16,11 @@ test("tests getActualStartDate gets the actual start date on date", () => {
   expect(getActualStartDate("2024-09-03", "Tue")).toBe("2024-09-03");
 });
 
-test("tests getActualEndDate gets the actual end date on day after end date", () => {
+test("tests getActualEndDate gets the actual end date on day or before end date", () => {
   expect(getActualEndDate("2024-09-07", "Mon")).toBe("2024-09-02");
 });
 
-test("tests getActualEndDate gets the actual end date on 6 days end date", () => {
+test("tests getActualEndDate gets the actual end date on 1 day before end date", () => {
   expect(getActualEndDate("2024-09-03", "Mon")).toBe("2024-09-02");
 });
 
@@ -49,3 +49,4 @@ test("tests getDayOfWeek when 2004-12-31 (Friday)", () => {
 test("tests getDayOfWeek when 2024-02-29 (Thursday)", () => {
   expect(getDayOfWeek(2024, 2, 29)).toBe(4);
 });
+

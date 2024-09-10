@@ -63,11 +63,15 @@ function getCourseName(courseRow) {
 // 1. later than the start date listed on the course table
 // 2. on dayOfWeek
 function getActualStartDate(startDay, dayOfWeek) {
-  let startDate = new Date(startDay);
-  let startDayOfWeek = startDate.getDay();
+  let startDateVals = startDay.split("-");
+  let startDayOfWeek = getDayOfWeek(
+    Number(startDateVals[0]),
+    Number(startDateVals[1]),
+    Number(startDateVals[2]),
+  );
   let dif = (dayOfWeekToNum.get(dayOfWeek) - startDayOfWeek + 7) % 7;
-  startDate.setDate(startDate.getDate() + dif);
-  return formatDate(startDate);
+  startDateVals[2] = (Number(startDateVals[2]) + dif).toString();
+  return `${startDateVals[0]}-${startDateVals[1]}-${startDateVals[2].padStart(2, "0")}`;
 }
 
 // Formula obtained from https://cs.uwaterloo.ca/~alopez-o/math-faq/node73.html#:~:text=For%20a%20Gregorian%20date%2C%20add,7%20and%20take%20the%20remainder.
@@ -77,10 +81,17 @@ function getDayOfWeek(year, month, day) {
   // treat Jan and Feb as months of the preceding year
   if (month == 1 || month == 2) year -= 1;
   const k = day;
-  const m = (month + 9) % 12 + 1;
-  const C = Math.floor(year/100);
+  const m = ((month + 9) % 12) + 1;
+  const C = Math.floor(year / 100);
   const Y = year % 100;
-  const W = (k + Math.floor(2.6*m - 0.2) - 2*C + Y + Math.floor(Y/4) + Math.floor(C/4)) % 7;
+  const W =
+    (k +
+      Math.floor(2.6 * m - 0.2) -
+      2 * C +
+      Y +
+      Math.floor(Y / 4) +
+      Math.floor(C / 4)) %
+    7;
   return (W + 7) % 7;
 }
 
@@ -88,11 +99,15 @@ function getDayOfWeek(year, month, day) {
 // 1. earlier than the end date listed on the course table
 // 2. on dayOfWeek
 function getActualEndDate(endDay, dayOfWeek) {
-  let endDate = new Date(endDay);
-  let endDayOfWeek = endDate.getDay();
+  let endDateVals = endDay.split("-");
+  let endDayOfWeek = getDayOfWeek(
+    Number(endDateVals[0]),
+    Number(endDateVals[1]),
+    Number(endDateVals[2]),
+  );
   let dif = (endDayOfWeek - dayOfWeekToNum.get(dayOfWeek) + 7) % 7;
-  endDate.setDate(endDate.getDate() - dif);
-  return formatDate(endDate);
+  endDateVals[2] = (Number(endDateVals[2]) - dif).toString();
+  return `${endDateVals[0]}-${endDateVals[1]}-${endDateVals[2].padStart(2, "0")}`;
 }
 
 // formats the Data object to "yyyy-mm-dd" format
@@ -164,5 +179,5 @@ function getLocation(block) {
 module.exports = {
   getActualStartDate,
   getActualEndDate,
-  getDayOfWeek
+  getDayOfWeek,
 };
