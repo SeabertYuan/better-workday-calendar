@@ -74,21 +74,6 @@ function getActualStartDate(startDay, dayOfWeek) {
   return `${startDateVals[0]}-${startDateVals[1]}-${startDateVals[2].padStart(2, "0")}`;
 }
 
-// gets the actual end date which is:
-// 1. earlier than the end date listed on the course table
-// 2. on dayOfWeek
-function getActualEndDate(endDay, dayOfWeek) {
-  let endDateVals = endDay.split("-");
-  let endDayOfWeek = getDayOfWeek(
-    Number(endDateVals[0]),
-    Number(endDateVals[1]),
-    Number(endDateVals[2]),
-  );
-  let dif = (endDayOfWeek - dayOfWeekToNum.get(dayOfWeek) + 7) % 7;
-  endDateVals[2] = (Number(endDateVals[2]) - dif).toString();
-  return `${endDateVals[0]}-${endDateVals[1]}-${endDateVals[2].padStart(2, "0")}`;
-}
-
 // Formula obtained from https://cs.uwaterloo.ca/~alopez-o/math-faq/node73.html#:~:text=For%20a%20Gregorian%20date%2C%20add,7%20and%20take%20the%20remainder.
 // input: int year, int month, int day
 // output: int, 0 is Sunday → 6 is Saturday
@@ -108,6 +93,21 @@ function getDayOfWeek(year, month, day) {
       Math.floor(C / 4)) %
     7;
   return (W + 7) % 7;
+}
+
+// gets the actual end date which is:
+// 1. earlier than the end date listed on the course table
+// 2. on dayOfWeek
+function getActualEndDate(endDay, dayOfWeek) {
+  let endDateVals = endDay.split("-");
+  let endDayOfWeek = getDayOfWeek(
+    Number(endDateVals[0]),
+    Number(endDateVals[1]),
+    Number(endDateVals[2]),
+  );
+  let dif = (endDayOfWeek - dayOfWeekToNum.get(dayOfWeek) + 7) % 7;
+  endDateVals[2] = (Number(endDateVals[2]) - dif).toString();
+  return `${endDateVals[0]}-${endDateVals[1]}-${endDateVals[2].padStart(2, "0")}`;
 }
 
 function getStartDay(block) {
