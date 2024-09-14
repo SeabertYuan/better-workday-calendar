@@ -168,7 +168,7 @@ function getLocation(block) {
   return loc_section;
 }
 
-module.exports = {
+const exportedFunctions = {
   getActualStartDate,
   getActualEndDate,
   getDayOfWeek,
@@ -180,3 +180,9 @@ module.exports = {
   isAm,
   parseTime,
 };
+
+// If in development (Node.js) environment
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = exportedFunctions;
+}
+  
