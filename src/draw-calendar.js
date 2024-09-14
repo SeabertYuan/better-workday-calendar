@@ -93,7 +93,7 @@ async function updateDayOfWeek() {
 }
 
 function addDayOfWeekEventListener() {
-  const buttons = document.querySelectorAll("ul.WB31 li");
+  const buttons = document.querySelectorAll("ul.WL41 li");
   if (!buttons) return;
   buttons.forEach(button => {
     button.addEventListener("click", updateDayOfWeek);
