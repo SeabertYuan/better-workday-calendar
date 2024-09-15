@@ -14,6 +14,7 @@ const {
   getLocation,
 } = require("../src/parse-courses");
 
+//-------------- getActualStartDate ---------------
 test("tests getActualStartDate gets the actual start date on day after start date", () => {
   expect(getActualStartDate("2024-09-07", "Mon")).toBe("2024-09-09");
 });
@@ -26,6 +27,7 @@ test("tests getActualStartDate gets the actual start date on date", () => {
   expect(getActualStartDate("2024-09-03", "Tue")).toBe("2024-09-03");
 });
 
+//-------------- getActualEndDate---------------
 test("tests getActualEndDate gets the actual end date on day or before end date", () => {
   expect(getActualEndDate("2024-09-07", "Mon")).toBe("2024-09-02");
 });
@@ -161,27 +163,27 @@ test("tests isAm on 12:00 a.m.", () => {
 //-------------- parseTime ---------------
 test("tests parseTime on normal a.m.", () => {
   expect(parseTime("3:00 a.m.")).toBe("03:00");
-})
+});
 
 test("tests parseTime on normal p.m.", () => {
   expect(parseTime("4:00 p.m.")).toBe("16:00");
-})
+});
 
 test("tests parseTime on normal 12:00 a.m.", () => {
   expect(parseTime("12:00 a.m.")).toBe("00:00");
-})
+});
 
 test("tests parseTime on normal 12:00 p.m.", () => {
   expect(parseTime("12:00 p.m.")).toBe("12:00");
-})
+});
 
 test("tests parseTime on already-24-hours", () => {
   expect(parseTime("15:00 p.m.")).toBe("15:00");
-})
+});
 
 test("tests parseTime on already-24-hours (00:00)", () => {
   expect(parseTime("00:00 a.m.")).toBe("00:00");
-})
+});
 
 //-------------- getStartTime ---------------
 test("tests getStartTime on Math226", () => {

@@ -177,6 +177,7 @@ function getLocation(block) {
   return loc_section;
 }
 
+
 const exportedFunctions = {
   getActualStartDate,
   getActualEndDate,
