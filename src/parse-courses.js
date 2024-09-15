@@ -144,7 +144,16 @@ function isAm(timeSection) {
 }
 
 // converts to 24-hour clock if needed
+// input: ([1-12] [a.m.|p.m.]) or 24-hour-clock
 function parseTime(time) {
+  let timeNum = time.split(" ")[0].trim();
+  if ((!isAm(time) && parseInt(timeNum.split(":")[0]) < 12) || (isAm(time) && parseInt(timeNum.split(":")[0]) == 12)) {
+    timeNum = `${(parseInt(timeNum.split(":")[0]) + 12) % 24}:${timeNum.split(":")[1].trim()}`
+  }
+  return ("0" + timeNum).slice(-5);
+}
+
+function parseTime_prev(time) {
   let timeNum = time.split(" ")[0].trim();
   if (isAm(time) || parseInt(timeNum.split(":")[0]) >= 12) {
     return ("0" + timeNum).slice(-5);
@@ -179,6 +188,9 @@ const exportedFunctions = {
   getTimeSection,
   isAm,
   parseTime,
+  getStartTime,
+  getEndTime,
+  getLocation,
 };
 
 // If in development (Node.js) environment

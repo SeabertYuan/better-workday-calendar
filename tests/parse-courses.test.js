@@ -9,6 +9,9 @@ const {
   getTimeSection,
   isAm,
   parseTime,
+  getStartTime,
+  getEndTime,
+  getLocation,
 } = require("../src/parse-courses");
 
 test("tests getActualStartDate gets the actual start date on day after start date", () => {
@@ -133,8 +136,8 @@ test("tests handleExceptionalDays when exceptional, single day", () => {
 
 //-------------- getTimeSection ---------------
 test("tests getTimeSection on Math226", () => {
-  const block = "2024-09-06 - 2024-12-06 | Fri | 3:00 p.m. - 5:00 p.m. | ICCS-Floor 2-Room X251";
-  expect(getTimeSection(block)).toBe("3:00 p.m. - 5:00 p.m.");
+  const block = "2024-09-03 - 2024-12-06 | Mon Wed Fri | 11:00 a.m. - 12:00 p.m. | CHBE-Floor 1-Room 102";
+  expect(getTimeSection(block)).toBe("11:00 a.m. - 12:00 p.m.");
 });
 
 test("tests getTimeSection on CS213 lab (Friday)", () => {
@@ -147,6 +150,68 @@ test("tests isAm on 3:00 p.m.", () => {
   expect(isAm("3:00 p.m.")).toBe(false);
 });
 
+test("tests isAm on 3:00 a.m.", () => {
+  expect(isAm("3:00 a.m.")).toBe(true);
+});
+
 test("tests isAm on 12:00 a.m.", () => {
   expect(isAm("12:00 a.m.")).toBe(true);
+});
+
+//-------------- parseTime ---------------
+test("tests parseTime on normal a.m.", () => {
+  expect(parseTime("3:00 a.m.")).toBe("03:00");
+})
+
+test("tests parseTime on normal p.m.", () => {
+  expect(parseTime("4:00 p.m.")).toBe("16:00");
+})
+
+test("tests parseTime on normal 12:00 a.m.", () => {
+  expect(parseTime("12:00 a.m.")).toBe("00:00");
+})
+
+test("tests parseTime on normal 12:00 p.m.", () => {
+  expect(parseTime("12:00 p.m.")).toBe("12:00");
+})
+
+test("tests parseTime on already-24-hours", () => {
+  expect(parseTime("15:00 p.m.")).toBe("15:00");
+})
+
+test("tests parseTime on already-24-hours (00:00)", () => {
+  expect(parseTime("00:00 a.m.")).toBe("00:00");
+})
+
+//-------------- getStartTime ---------------
+test("tests getStartTime on Math226", () => {
+  const block = "2024-09-03 - 2024-12-06 | Mon Wed Fri | 11:00 a.m. - 12:00 p.m. | CHBE-Floor 1-Room 102";
+  expect(getStartTime(block)).toBe("11:00");
+});
+
+test("tests getStartTime on CS213 lab (Friday)", () => {
+  const block = "2024-09-06 - 2024-12-06 | Fri | 3:00 p.m. - 5:00 p.m. | ICCS-Floor 2-Room X251";
+  expect(getStartTime(block)).toBe("15:00");
+});
+
+//-------------- getEndTime ---------------
+test("tests getEndTime on Math226", () => {
+  const block = "2024-09-03 - 2024-12-06 | Mon Wed Fri | 11:00 a.m. - 12:00 p.m. | CHBE-Floor 1-Room 102";
+  expect(getEndTime(block)).toBe("12:00");
+});
+
+test("tests getEndTime on CS213 lab (Friday)", () => {
+  const block = "2024-09-06 - 2024-12-06 | Fri | 3:00 p.m. - 5:00 p.m. | ICCS-Floor 2-Room X251";
+  expect(getEndTime(block)).toBe("17:00");
+});
+
+//-------------- getLocation ---------------
+test("tests getEndTime on Math226", () => {
+  const block = "2024-09-03 - 2024-12-06 | Mon Wed Fri | 11:00 a.m. - 12:00 p.m. | CHBE-Floor 1-Room 102";
+  expect(getLocation(block)).toBe("CHBE-Floor 1-Room 102");
+});
+
+test("tests getEndTime on CS213 lab (Friday)", () => {
+  const block = "2024-09-06 - 2024-12-06 | Fri | 3:00 p.m. - 5:00 p.m. | ICCS-Floor 2-Room X251";
+  expect(getLocation(block)).toBe("ICCS-Floor 2-Room X251");
 });
