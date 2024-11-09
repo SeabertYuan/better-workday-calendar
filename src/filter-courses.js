@@ -99,7 +99,7 @@ function addCourseIfTermMatches(elemTerm, courseName, TERM, setOfCoursesToShow) 
 }
 
 
-const exportedFunctions = {
+const exportedFunctions_filtercourses = {
   doTablesExist,
   calculateCourseTerm,
   addCourseIfTermMatches,
@@ -107,5 +107,5 @@ const exportedFunctions = {
 
 // If in development (Node.js) environment
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = exportedFunctions;
+  module.exports = exportedFunctions_filtercourses;
 }

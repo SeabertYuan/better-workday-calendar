@@ -1,9 +1,15 @@
+// DOM-related constants
+const courseElementClasses = ".WNSC.WLSC.WMTC.WFUC"; //.WMSC.WKSC.WLTC.WEUC
+const courseNameTextClasses = ".gwt-Label.WIUC.WPSC.WEVC";
+const courseDescriptionTextClasses = ".gwt-Label.WJUC.WEVC";
+const smallViewportDayOfWeekButtonsClasses = "ul.WH31 li";
+
 // initialize variables (wait for the course tables and course elements
 // to show up then initialize them)
 function initializeVariables() {
   TERM = 0; // 0-none, 1-term 1, 2-term 2, 3-full year
   courseElements = Array.from(
-    document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"),
+    document.querySelectorAll(courseElementClasses),
   );
 }
 

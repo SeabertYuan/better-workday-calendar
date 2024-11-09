@@ -178,7 +178,7 @@ function getLocation(block) {
 }
 
 
-const exportedFunctions = {
+const exportedFunctions_parsecourses = {
   getActualStartDate,
   getActualEndDate,
   getDayOfWeek,
@@ -196,6 +196,6 @@ const exportedFunctions = {
 
 // If in development (Node.js) environment
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = exportedFunctions;
+  module.exports = exportedFunctions_parsecourses;
 }
   

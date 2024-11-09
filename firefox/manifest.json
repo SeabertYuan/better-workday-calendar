@@ -1,6 +1,6 @@
 {
   "name": "Better Workday Calendar",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A browser extension that allows you to use the UBC Workday calendar term by term.",
   "homepage_url": "https://github.com/SeabertYuan/better-workday-calendar",
   "manifest_version": 3,

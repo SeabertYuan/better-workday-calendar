@@ -66,7 +66,7 @@ function draw() {
 
 function refreshCourseElements() {
   courseElements = Array.from(
-    document.querySelectorAll(".WMSC.WKSC.WLTC.WEUC"),
+    document.querySelectorAll(courseElementClasses),
   );
 }
 
@@ -93,7 +93,7 @@ async function updateDayOfWeek() {
 }
 
 function addDayOfWeekEventListener() {
-  const buttons = document.querySelectorAll("ul.WL41 li");
+  const buttons = document.querySelectorAll(smallViewportDayOfWeekButtonsClasses);
   if (!buttons) return;
   buttons.forEach(button => {
     button.addEventListener("click", updateDayOfWeek);
@@ -188,14 +188,6 @@ function addToolbarButtonStyles() {
       margin-inline-start: 0;
     }
 
-    .gwt-Label.WHUC.WOSC.WDVC {
-      font-size: 11px;
-    }
-
-    .gwt-Label.WIUC.WDVC {
-      font-size: 10px
-    }
-
     .export-button {
       margin-inline-start: 15px;
       border-radius: 15px;
@@ -259,6 +251,14 @@ function addPopupWindowStyle() {
       .WCU.wd-popup {
         max-width: 80% !important;
       }
+    }
+
+    ${courseNameTextClasses} {
+      font-size: 11px;
+    }
+
+    ${courseDescriptionTextClasses} {
+      font-size: 10px
     }
   `));
   document.head.appendChild(styleElement);
