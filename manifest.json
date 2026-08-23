@@ -18,6 +18,7 @@
       "js": [
         "src/index.js",
         "src/draw-calendar.js",
+        "src/export-calendar.js",
         "src/main.js"
       ],
       "run_at": "document_idle"

@@ -125,14 +125,24 @@
             .map((child) => child.textContent || "")
             .join(" ")
         : element.textContent;
-    const parts = [
+    const values = [
       element.innerText,
       structuralText,
       element.getAttribute && element.getAttribute("aria-label"),
       element.getAttribute && element.getAttribute("title"),
       element.getAttribute && element.getAttribute("data-automation-label"),
-    ];
-    return normaliseText(parts.filter(Boolean).join(" "));
+    ]
+      .filter(Boolean)
+      .map((part) => normaliseText(part))
+      .filter(Boolean);
+    const seen = new Set();
+    const parts = values.filter((part) => {
+      const key = part.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return normaliseText(parts.join(" "));
   }
 
   function getDirectMatches(parent, selectors) {
@@ -512,12 +522,23 @@
     const text = normaliseText(value);
     if (!text || !info) return "";
     const escaped = info.fullCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return normaliseText(
+    const stripped = normaliseText(
       text
         .replace(new RegExp(escaped, "i"), "")
         .replace(/^\s*[-–—:]\s*/, "")
         .replace(/^\s*[-–—:]\s*/, ""),
     );
+    const repeatedParts = stripped
+      .split(/\s+[-–—:]\s+/)
+      .map((part) => normaliseText(part))
+      .filter(Boolean);
+    if (
+      repeatedParts.length === 2 &&
+      repeatedParts[0].toLowerCase() === repeatedParts[1].toLowerCase()
+    ) {
+      return repeatedParts[0];
+    }
+    return stripped;
   }
 
   function extractCourseInfo(row, headers) {
@@ -591,12 +612,23 @@
     };
   }
 
+  function getColumnText(cells, headers, pattern) {
+    const index = headers.findIndex((header) => pattern.test(header));
+    return index >= 0 ? getText(cells[index]) : "";
+  }
+
   function buildRecord(row, table, headers) {
     const rowText = getText(row);
     const courseInfo = extractCourseInfo(row, headers);
     if (!courseInfo) return null;
 
     const cells = getCells(row);
+    const credits = getColumnText(cells, headers, /\b(?:credit|credits|unit|units)\b/i);
+    const instructor = getColumnText(
+      cells,
+      headers,
+      /\b(?:instructor|teacher|professor)\b/i,
+    );
     const meetingTexts = getMeetingTexts(cells, rowText);
     const meetings = unique(meetingTexts)
       .map(parseMeetingText)
@@ -644,6 +676,8 @@
       displayName: courseInfo.displayName,
       title: courseInfo.title,
       section: courseInfo.section,
+      credits,
+      instructor,
       row,
       table,
     };

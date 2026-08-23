@@ -5,6 +5,7 @@
 
   const STYLE_ID = "ubc-workday-term-calendar-styles";
   const TOOLBAR_SELECTOR = '[data-workday-term-calendar-toolbar="true"]';
+  const EXPORT_ROW_SELECTOR = '[data-workday-term-calendar-export-row="true"]';
   const TITLEBAR_SELECTOR = '[data-workday-term-calendar-titlebar="true"]';
   const EVENT_SELECTOR = '[data-workday-term-calendar-event="true"]';
   const DAY_WIDTH = API.DAY_WIDTH;
@@ -59,12 +60,43 @@
         min-width: 0;
         width: auto;
         margin-left: auto;
-        gap: 6px;
+        gap: 0;
         align-items: center;
         align-self: center;
         box-sizing: border-box;
         padding: 0 8px;
         white-space: nowrap;
+        position: relative;
+        z-index: 2;
+        pointer-events: auto !important;
+      }
+
+      ${TOOLBAR_SELECTOR} .ubc-workday-toolbar-group {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 6px;
+      }
+
+      ${TOOLBAR_SELECTOR} .ubc-workday-waitlisted-group {
+        margin-left: 12px;
+      }
+
+      ${EXPORT_ROW_SELECTOR} {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        box-sizing: border-box;
+        width: 100%;
+        padding: 6px 16px;
+        background: #f7f8fa;
+        border-top: 1px solid #e1e4e8;
+        margin: 0 !important;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        pointer-events: auto !important;
       }
 
       ${TOOLBAR_SELECTOR} ~ [class*="IconsContainer"] {
@@ -73,7 +105,8 @@
         margin-inline-start: 0 !important;
       }
 
-      ${TOOLBAR_SELECTOR} button {
+      ${TOOLBAR_SELECTOR} button,
+      ${EXPORT_ROW_SELECTOR} button {
         appearance: none;
         border: 1px solid #c9ced6;
         border-radius: 5px;
@@ -83,6 +116,9 @@
         line-height: 1.2;
         min-height: 28px;
         padding: 5px 10px;
+        position: relative;
+        z-index: 3;
+        pointer-events: auto !important;
         transition: background-color 120ms ease, border-color 120ms ease;
       }
 
@@ -109,7 +145,22 @@
         color: #fff;
       }
 
-      ${TOOLBAR_SELECTOR} button:hover {
+      ${EXPORT_ROW_SELECTOR} .ubc-workday-export-button {
+        background: #e3f2e5;
+        border-color: #8fb898;
+        color: #285d32;
+        font-weight: 600;
+      }
+
+      ${EXPORT_ROW_SELECTOR} .ubc-workday-export-icon {
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        vertical-align: -2px;
+      }
+
+      ${TOOLBAR_SELECTOR} button:hover,
+      ${EXPORT_ROW_SELECTOR} button:hover {
         filter: brightness(0.97);
       }
 
@@ -129,9 +180,9 @@
       }
 
       ${EVENT_SELECTOR}[data-workday-registration-status="waitlisted"] {
-        background-color: #fff4d6 !important;
+        background-color: color-mix(in srgb, var(--workday-course-color) 58%, #ffffff) !important;
         background-image: none !important;
-        border-color: #d6a335 !important;
+        border-color: color-mix(in srgb, var(--workday-course-color) 62%, #4b5563) !important;
         border-radius: 5px !important;
         border-width: 2px !important;
         border-style: dashed !important;
@@ -235,7 +286,7 @@
 
       .ubc-workday-detail-popover-status {
         display: inline-block;
-        margin-bottom: 8px;
+        margin: 0;
         border-radius: 999px;
         background: #edf1f5;
         color: #465360;
@@ -249,6 +300,29 @@
         color: #6c4c00;
       }
 
+      .ubc-workday-detail-popover-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 4px;
+        margin-bottom: 4px;
+      }
+
+      .ubc-workday-detail-popover-term {
+        display: inline-block;
+        border: 1px solid color-mix(in srgb, var(--workday-course-color) 45%, #b8c2cc);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--workday-course-color) 22%, #ffffff);
+        color: #38536a;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 7px;
+      }
+
+      .ubc-workday-detail-popover-field {
+        margin-top: 10px;
+      }
+
       .ubc-workday-detail-popover-label {
         margin-top: 8px;
         color: #66727d;
@@ -257,9 +331,70 @@
         text-transform: uppercase;
       }
 
-      .ubc-workday-detail-popover-details {
-        white-space: pre-wrap;
+      .ubc-workday-detail-popover-value {
         overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-meetings {
+        margin-top: 14px;
+        border-top: 1px solid #e1e5ea;
+        padding-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting {
+        padding: 5px 0;
+      }
+
+      .ubc-workday-detail-popover-meeting + .ubc-workday-detail-popover-meeting {
+        margin-top: 6px;
+        border-top: 1px solid #edf0f3;
+        padding-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-line {
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-meeting-date {
+        font-weight: 600;
+      }
+
+      .ubc-workday-detail-popover-day-strip {
+        display: flex;
+        gap: 4px;
+        margin-top: 6px;
+      }
+
+      .ubc-workday-detail-popover-day {
+        display: grid;
+        place-items: center;
+        flex: 1 1 0;
+        min-width: 0;
+        height: 24px;
+        box-sizing: border-box;
+        border: 1px solid #d5dce3;
+        border-radius: 5px;
+        background: #f5f7f9;
+        color: #75818d;
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .ubc-workday-detail-popover-day.is-active {
+        border-color: color-mix(in srgb, var(--workday-course-color) 65%, #7f8b97);
+        background: color-mix(in srgb, var(--workday-course-color) 35%, #ffffff);
+        color: #25313d;
+      }
+
+      .ubc-workday-detail-popover-meeting-time {
+        margin-top: 6px;
+        color: #344656;
+        font-weight: 600;
+      }
+
+      .ubc-workday-detail-popover-meeting-location {
+        margin-top: 2px;
+        color: #5b6773;
       }
     `;
   }
@@ -501,7 +636,8 @@
   }
 
   function hasCalendarTitle(root) {
-    return /view\s+as\s+course\s+calendar/i.test(normaliseText(root.textContent));
+    const text = normaliseText(root.textContent);
+    return /\bcourse\b/i.test(text) && /\bcalendar\b/i.test(text);
   }
 
   function findTitleBar(surface) {
@@ -567,23 +703,111 @@
 
   function removeToolbars() {
     document
-      .querySelectorAll(`${TOOLBAR_SELECTOR}, .toolbar-buttons`)
+      .querySelectorAll(
+        `${TOOLBAR_SELECTOR}, ${EXPORT_ROW_SELECTOR}`,
+      )
       .forEach((toolbar) => toolbar.remove());
     document
       .querySelectorAll(TITLEBAR_SELECTOR)
       .forEach((titleBar) => titleBar.removeAttribute("data-workday-term-calendar-titlebar"));
   }
 
-  function toolbarButton(toolbar, selector, label, className) {
+  function toolbarButton(toolbar, selector, label, className, parent = toolbar) {
     let button = toolbar.querySelector(selector);
     if (!button) {
       button = document.createElement("button");
       button.type = "button";
-      button.className = className;
-      toolbar.appendChild(button);
     }
+    button.classList.add(className);
     button.textContent = label;
+    if (button.parentElement !== parent) {
+      parent.appendChild(button);
+    }
     return button;
+  }
+
+  function toolbarGroup(toolbar, className, label) {
+    let group = toolbar.querySelector(`.${className}`);
+    if (!group) {
+      group = document.createElement("div");
+    }
+    group.className = `ubc-workday-toolbar-group ${className}`;
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", label);
+    return group;
+  }
+
+  function findCalendarAnchor(surface) {
+    const nativeEvent = surface.querySelector(
+      '[data-automation-id="calendarevent"], [data-automation-id="calendarEvent"], .WMSC.WKSC.WLTC.WEUC',
+    );
+    return nativeEvent
+      ? nativeEvent.closest('table,[role="grid"],[role="presentation"]') ||
+          nativeEvent.parentElement
+      : surface.querySelector(
+          '[role="grid"], [data-automation-id*="calendar"], [class*="Calendar"], [class*="calendar"]',
+        );
+  }
+
+  function findCalendarContainer(surface, titleBarElement, row) {
+    const calendarAnchor = findCalendarAnchor(surface);
+    if (!calendarAnchor || calendarAnchor === surface) return null;
+
+    let header = titleBarElement;
+    while (header.parentElement && header.parentElement !== surface) {
+      header = header.parentElement;
+    }
+
+    let candidate = header.nextElementSibling;
+    while (candidate) {
+      if (candidate !== row && candidate.contains(calendarAnchor)) {
+        return candidate;
+      }
+      candidate = candidate.nextElementSibling;
+    }
+
+    let container = calendarAnchor;
+    while (container.parentElement && container.parentElement !== surface) {
+      container = container.parentElement;
+    }
+    return container === titleBarElement || container.contains(titleBarElement)
+      ? null
+      : container;
+  }
+
+  function exportRow(surface, titleBarElement) {
+    const rows = Array.from(document.querySelectorAll(EXPORT_ROW_SELECTOR));
+    let row = rows.find((candidate) => surface.contains(candidate));
+
+    let container = findCalendarContainer(surface, titleBarElement, row);
+    if (!container) {
+      return null;
+    }
+    if (/^(TABLE|TBODY|THEAD|TR)$/i.test(container.tagName)) {
+      container = container.parentElement || container;
+    }
+
+    if (!row) row = document.createElement("div");
+
+    rows
+      .filter((candidate) => candidate !== row)
+      .forEach((candidate) => candidate.remove());
+    row.setAttribute("data-workday-term-calendar-export-row", "true");
+
+    let header = titleBarElement;
+    while (header.parentElement && header.parentElement !== surface) {
+      header = header.parentElement;
+    }
+    let firstContent = header.nextElementSibling;
+    while (firstContent === row) {
+      firstContent = firstContent.nextElementSibling;
+    }
+    const reference = firstContent || container;
+    const host = reference.parentElement || container.parentElement || container;
+    if (row.parentElement !== host || row.nextElementSibling !== reference) {
+      host.insertBefore(row, reference);
+    }
+    return row;
   }
 
   function updateToolbarState() {
@@ -612,60 +836,72 @@
       return null;
     }
 
-    // Remove the toolbar class used by the previous implementation if the
-    // extension was reloaded without reloading the Workday page.
-    document.querySelectorAll(".toolbar-buttons").forEach((toolbar) => toolbar.remove());
     document.querySelectorAll(TITLEBAR_SELECTOR).forEach((element) => {
       if (element !== titleBar.element) {
         element.removeAttribute("data-workday-term-calendar-titlebar");
       }
     });
 
-    const toolbars = Array.from(document.querySelectorAll(TOOLBAR_SELECTOR));
-    const inHost = toolbars.filter((toolbar) => titleBar.element.contains(toolbar));
-    const toolbar = inHost[0] || document.createElement("div");
+    const toolbars = Array.from(surface.querySelectorAll(TOOLBAR_SELECTOR));
+    const toolbar = toolbars[0] || document.createElement("div");
     toolbars.forEach((existing) => {
       if (existing !== toolbar) existing.remove();
     });
 
     toolbar.setAttribute("data-workday-term-calendar-toolbar", "true");
     titleBar.element.setAttribute("data-workday-term-calendar-titlebar", "true");
-    const closeContainer = (() => {
-      let current = titleBar.close;
-      while (current.parentElement && current.parentElement !== titleBar.element) {
-        current = current.parentElement;
-      }
-      return current.parentElement === titleBar.element ? current : null;
-    })();
-    if (closeContainer) {
-      if (
-        toolbar.parentElement !== titleBar.element ||
-        toolbar.nextElementSibling !== closeContainer
-      ) {
-        titleBar.element.insertBefore(toolbar, closeContainer);
-      }
-    } else if (toolbar.parentElement !== titleBar.element) {
-      titleBar.element.appendChild(toolbar);
+    const exportControls = exportRow(surface, titleBar.element);
+    if (!exportControls) {
+      removeToolbars();
+      return null;
+    }
+    const exportButton =
+      typeof API.addExportButton === "function"
+        ? API.addExportButton(exportControls)
+        : null;
+    if (exportButton && exportControls.firstElementChild !== exportButton) {
+      exportControls.insertBefore(exportButton, exportControls.firstElementChild);
+    }
+    if (
+      toolbar.parentElement !== exportControls ||
+      toolbar !== exportControls.lastElementChild
+    ) {
+      exportControls.appendChild(toolbar);
     }
 
+    const termGroup = toolbarGroup(toolbar, "ubc-workday-term-group", "Term filter");
+    const waitlistedGroup = toolbarGroup(
+      toolbar,
+      "ubc-workday-waitlisted-group",
+      "Waitlisted filter",
+    );
     const term1 = toolbarButton(
       toolbar,
       '[data-workday-term="1"]',
       "Term 1",
       "ubc-workday-term-button",
+      termGroup,
     );
     const term2 = toolbarButton(
       toolbar,
       '[data-workday-term="2"]',
       "Term 2",
       "ubc-workday-term-button",
+      termGroup,
     );
     const waitlisted = toolbarButton(
       toolbar,
       '[data-workday-show-waitlisted="true"]',
       "Show waitlisted",
       "ubc-workday-waitlisted-button",
+      waitlistedGroup,
     );
+    if (
+      toolbar.firstElementChild !== termGroup ||
+      termGroup.nextElementSibling !== waitlistedGroup
+    ) {
+      toolbar.append(termGroup, waitlistedGroup);
+    }
     term1.setAttribute("data-workday-term", "1");
     term2.setAttribute("data-workday-term", "2");
     waitlisted.setAttribute("data-workday-show-waitlisted", "true");
@@ -688,18 +924,147 @@
     return toolbar;
   }
 
+  function formatDetailDate(value) {
+    if (!(value instanceof Date) || Number.isNaN(value.getTime())) return "";
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(value);
+  }
+
+  function formatDetailTime(minutes) {
+    if (!Number.isFinite(minutes)) return "";
+    const total = ((Math.round(minutes) % 1440) + 1440) % 1440;
+    const hour24 = Math.floor(total / 60);
+    const hour12 = hour24 % 12 || 12;
+    const meridiem = hour24 >= 12 ? "PM" : "AM";
+    return `${hour12}:${String(total % 60).padStart(2, "0")} ${meridiem}`;
+  }
+
+  function formatDetailMeetingDate(meeting) {
+    const start = formatDetailDate(meeting.startDate);
+    const end = formatDetailDate(meeting.endDate || meeting.startDate);
+    if (!start) return "";
+    return end && end !== start ? `${start} – ${end}` : start;
+  }
+
+  function formatDetailLocation(meeting) {
+    const parts = normaliseText(meeting.text || "")
+      .split("|")
+      .map((part) => part.trim());
+    if (parts.length <= 3) return "";
+    return normaliseText(
+      parts[3]
+        .replace(/\bUBCV\b/gi, "")
+        .replace(/^\s*[-–—:,|]\s*/, "")
+        .replace(/\s*[-–—:,|]\s*$/, ""),
+    );
+  }
+
+  function appendMeetingDayStrip(parent, meeting) {
+    const strip = document.createElement("div");
+    strip.className = "ubc-workday-detail-popover-day-strip";
+    const activeDays = new Set(meeting.meetingDays || []);
+    const shortNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    strip.setAttribute(
+      "aria-label",
+      (meeting.meetingDays || [])
+        .map((day) => API.DAY_NAMES[day])
+        .filter(Boolean)
+        .join(", "),
+    );
+    shortNames.forEach((name, day) => {
+      const dayElement = document.createElement("span");
+      dayElement.className = "ubc-workday-detail-popover-day";
+      if (activeDays.has(day)) dayElement.classList.add("is-active");
+      dayElement.textContent = name;
+      strip.appendChild(dayElement);
+    });
+    parent.appendChild(strip);
+  }
+
+  function detailCourseCode(record) {
+    const code = normaliseText(record.displayName || record.courseId || "");
+    const section = normaliseText(record.section || "");
+    if (!code) return normaliseText(record.name || "Course");
+    return section ? `${code}-${section}` : code;
+  }
+
+  function detailDescription(record) {
+    let value = normaliseText(record.title || eventDescription(record));
+    const codes = [
+      detailCourseCode(record),
+      record.displayName,
+      record.courseId,
+    ]
+      .map((code) => normaliseText(code))
+      .filter(Boolean)
+      .sort((left, right) => right.length - left.length);
+    for (const code of codes) {
+      const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      value = value.replace(new RegExp(escaped, "gi"), " ");
+    }
+    value = normaliseText(
+      value
+        .replace(/^\s*[-–—:]\s*/, "")
+        .replace(/\s*[-–—:]\s*$/, ""),
+    );
+    const repeatedParts = value
+      .split(/\s+[-–—:]\s+/)
+      .map((part) => normaliseText(part))
+      .filter(Boolean);
+    if (
+      repeatedParts.length === 2 &&
+      repeatedParts[0].toLowerCase() === repeatedParts[1].toLowerCase()
+    ) {
+      return repeatedParts[0];
+    }
+    return value;
+  }
+
+  function detailCredits(value) {
+    const text = normaliseText(value);
+    if (!text) return "";
+    if (/^\d+(?:\.\d+)?(?:\s*(?:credits?|units?))?$/i.test(text)) {
+      return text;
+    }
+    const numbers = text.match(/\d+(?:\.\d+)?/g) || [];
+    return numbers.length && numbers.every((number) => number === numbers[0])
+      ? numbers[0]
+      : "";
+  }
+
+  function addPopoverField(body, label, value) {
+    if (!value) return;
+    const field = document.createElement("div");
+    field.className = "ubc-workday-detail-popover-field";
+    const labelElement = document.createElement("div");
+    labelElement.className = "ubc-workday-detail-popover-label";
+    labelElement.textContent = label;
+    const valueElement = document.createElement("div");
+    valueElement.className = "ubc-workday-detail-popover-value";
+    valueElement.textContent = value;
+    field.append(labelElement, valueElement);
+    body.appendChild(field);
+  }
+
   function showDetails(anchor, record) {
     closePopover();
     const popover = document.createElement("div");
     popover.className = "ubc-workday-detail-popover";
     popover.setAttribute("role", "dialog");
     popover.setAttribute("aria-label", "Course details");
+    popover.style.setProperty(
+      "--workday-course-color",
+      getCourseColor(record.courseId),
+    );
 
     const header = document.createElement("div");
     header.className = "ubc-workday-detail-popover-header";
     const title = document.createElement("div");
     title.className = "ubc-workday-detail-popover-title";
-    title.textContent = record.name || recordLabel(record);
+    title.textContent = detailCourseCode(record);
     const close = document.createElement("button");
     close.type = "button";
     close.className = "ubc-workday-detail-popover-close";
@@ -714,24 +1079,72 @@
     status.dataset.status = record.registrationStatus;
     status.textContent =
       record.registrationStatus === "waitlisted" ? "Waitlisted" : "Registered";
-    body.appendChild(status);
+    const term = document.createElement("div");
+    term.className = "ubc-workday-detail-popover-term";
+    term.textContent = record.term === 2 ? "Term 2" : "Term 1";
+    const meta = document.createElement("div");
+    meta.className = "ubc-workday-detail-popover-meta";
+    meta.append(status, term);
+    body.appendChild(meta);
 
-    const termLabel = document.createElement("div");
-    termLabel.className = "ubc-workday-detail-popover-label";
-    termLabel.textContent = "Term";
-    const termValue = document.createElement("div");
-    termValue.textContent = record.term === 2 ? "Term 2" : "Term 1";
-    body.append(termLabel, termValue);
+    addPopoverField(body, "Description", detailDescription(record));
+    addPopoverField(body, "Credits", detailCredits(record.credits));
+    addPopoverField(body, "Instructor", record.instructor || "");
 
-    const detailsLabel = document.createElement("div");
-    detailsLabel.className = "ubc-workday-detail-popover-label";
-    detailsLabel.textContent = "Details";
-    const details = document.createElement("div");
-    details.className = "ubc-workday-detail-popover-details";
-    details.textContent = record.details || record.rowText || "No additional details.";
-    body.append(detailsLabel, details);
+    const meetings = record.meetings && record.meetings.length
+      ? record.meetings
+      : record.startDate || Number.isFinite(record.startMinutes)
+        ? [record]
+        : [];
+    if (meetings.length) {
+      const meetingsList = document.createElement("div");
+      meetingsList.className = "ubc-workday-detail-popover-meetings";
+      meetings.forEach((meeting) => {
+        const meetingCard = document.createElement("div");
+        meetingCard.className = "ubc-workday-detail-popover-meeting";
+        const date = formatDetailMeetingDate(meeting);
+        const time = [
+          formatDetailTime(meeting.startMinutes),
+          formatDetailTime(meeting.endMinutes),
+        ]
+          .filter(Boolean)
+          .join(" – ");
+        const location = formatDetailLocation(meeting);
+        if (date) {
+          const dateLine = document.createElement("div");
+          dateLine.className =
+            "ubc-workday-detail-popover-meeting-line ubc-workday-detail-popover-meeting-date";
+          dateLine.textContent = date;
+          meetingCard.appendChild(dateLine);
+        }
+        if (meeting.meetingDays && meeting.meetingDays.length) {
+          appendMeetingDayStrip(meetingCard, meeting);
+        }
+        if (time) {
+          const timeLine = document.createElement("div");
+          timeLine.className =
+            "ubc-workday-detail-popover-meeting-line ubc-workday-detail-popover-meeting-time";
+          timeLine.textContent = time;
+          meetingCard.appendChild(timeLine);
+        }
+        if (location) {
+          const locationLine = document.createElement("div");
+          locationLine.className =
+            "ubc-workday-detail-popover-meeting-line ubc-workday-detail-popover-meeting-location";
+          locationLine.textContent = location;
+          meetingCard.appendChild(locationLine);
+        }
+        meetingsList.appendChild(meetingCard);
+      });
+      body.appendChild(meetingsList);
+    }
     popover.append(header, body);
-    document.body.appendChild(popover);
+    const surface = API.state.context && API.state.context.surface;
+    const popoverHost = surface && surface.contains(anchor) ? surface : document.body;
+    popoverHost.appendChild(popover);
+    ["pointerdown", "mousedown", "mouseup", "click"].forEach((eventName) => {
+      popover.addEventListener(eventName, (event) => event.stopPropagation());
+    });
 
     const reposition = () => {
       if (!popover.isConnected || !anchor.isConnected) return;
@@ -756,7 +1169,11 @@
       }
     };
     const escape = (event) => {
-      if (event.key === "Escape") closePopover();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closePopover();
+      }
     };
     close.addEventListener("click", closePopover);
     document.addEventListener("mousedown", outsideClick, true);
