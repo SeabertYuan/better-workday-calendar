@@ -5,17 +5,19 @@ A lightweight, fast, and private browser extension that fixes and improves vario
 <details>
 <summary><b> Details </b></summary>
 
-This extension tags courses by their start and end dates to determine which term they should belong to. It adds buttons to allow the user to quickly display courses in their desired terms.
+This extension assigns courses to Term 1 or Term 2 from their Workday course data and adds controls for switching terms.
 
-By default, long course names are cut off; this is fixed by expanding the calendar popup area and slightly decreasing font size.
+Waitlisted courses are hidden by default and can be shown separately. Courses receive stable colours, overlapping events use recalculated widths, and clicking an event opens readable course details.
 
-In version 2.0.0, we added the ability to export your courses into an ics file allowing you to import your course schedule into your favourite calendar app.
+The existing calendar export is available as an iCalendar (`.ics`) download.
 
 </details>
 
 ## Usage
 
-This extension is available on [Google Chrome](https://chromewebstore.google.com/detail/better-workday-calendar/ebgddfhinidlemocaclojkiadpknpoia) and [Firefox](https://addons.mozilla.org/en-CA/firefox/addon/better-workday-calendar/) in their respective add-on stores. After installation, the extension will display additional buttons whenever the user presses the "Calendar View" button on the "view my courses" page. When the calendar view popup appears users will be able to filter their courses by terms and export their calendar!
+This extension is available on [Google Chrome](https://chromewebstore.google.com/detail/better-workday-calendar/ebgddfhinidlemocaclojkiadpknpoia) and [Firefox](https://addons.mozilla.org/en-CA/firefox/addon/better-workday-calendar/).
+
+The extension applies to the **View as Course Calendar** popup opened from **View My Courses**. It adds Term 1 / Term 2 filters, a waitlisted-course toggle, course details, and calendar export without changing other Workday pages.
 
 ## What's next?
 
@@ -33,7 +35,7 @@ It's tough to keep track of what to do so we've made a list.
 
 #### Features:
 
-- [ ] Course colour coding
+- [x] Course colour coding
 - [x] Ability to export calendar
 - [x] Support for summer sessions
 - [x] Support full-year courses
