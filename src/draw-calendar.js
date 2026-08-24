@@ -411,6 +411,77 @@
     if (display !== undefined) element.style.display = display;
   }
 
+  function restoreAttribute(element, name, value) {
+    if (value === null || value === undefined) {
+      element.removeAttribute(name);
+    } else {
+      element.setAttribute(name, value);
+    }
+  }
+
+  function restoreManagedEvent(element) {
+    if (!element || !element.isConnected) return;
+    restoreElement(element);
+
+    const original = API.state.originalEventAttributes.get(element);
+    if (original) {
+      restoreAttribute(element, "title", original.title);
+      restoreAttribute(element, "tabindex", original.tabIndex);
+      restoreAttribute(
+        element,
+        "data-workday-term-calendar-event",
+        original.marker,
+      );
+      restoreAttribute(
+        element,
+        "data-workday-registration-status",
+        original.status,
+      );
+      restoreAttribute(element, "data-workday-course-id", original.courseId);
+      if (original.courseColor) {
+        element.style.setProperty("--workday-course-color", original.courseColor);
+      } else {
+        element.style.removeProperty("--workday-course-color");
+      }
+      element.classList.toggle("ubc-workday-managed-event", original.managedClass);
+    } else {
+      element.removeAttribute("title");
+      element.removeAttribute("tabindex");
+      element.removeAttribute("data-workday-term-calendar-event");
+      element.removeAttribute("data-workday-registration-status");
+      element.removeAttribute("data-workday-course-id");
+      element.style.removeProperty("--workday-course-color");
+      element.classList.remove("ubc-workday-managed-event");
+    }
+
+    element
+      .querySelectorAll(".ubc-workday-event-summary")
+      .forEach((summary) => summary.remove());
+    delete element.__workdayTermRecord;
+    API.state.lastAppliedStyles.delete(element);
+  }
+
+  function restoreManagedEvents() {
+    const elements = new Set(
+      (API.state.context?.events || []).map((binding) => binding.element),
+    );
+    document
+      .querySelectorAll(
+        `${EVENT_SELECTOR}, [data-workday-term-calendar-generated="waitlisted"]`,
+      )
+      .forEach((element) => elements.add(element));
+
+    for (const element of elements) {
+      if (
+        element.getAttribute("data-workday-term-calendar-generated") === "waitlisted"
+      ) {
+        element.remove();
+      } else {
+        restoreManagedEvent(element);
+      }
+    }
+  }
+
   function getCourseColor(courseId) {
     const key = compactKey(courseId) || "UNKNOWN";
     const colors = API.state.courseColors;
@@ -496,7 +567,6 @@
     element.setAttribute("data-workday-course-id", record.courseId || "");
     element.style.setProperty("--workday-course-color", getCourseColor(record.courseId));
     element.title = title;
-    element.classList.add("ubc-workday-managed-event");
     ensureSummary(element, record);
     bindEventInteraction(element, record);
   }
@@ -532,23 +602,37 @@
     };
   }
 
-  function conflictGroups(bindings) {
-    const groups = [];
-    const sorted = bindings
+  function sortedIntervals(bindings) {
+    return bindings
       .map((binding) => ({ binding, interval: getInterval(binding) }))
       .filter((item) => item.interval)
       .sort((left, right) => left.interval.start - right.interval.start);
+  }
 
-    for (const item of sorted) {
-      const lastGroup = groups[groups.length - 1];
-      if (!lastGroup || item.interval.start >= lastGroup.end) {
-        groups.push({ end: item.interval.end, items: [item] });
-      } else {
-        lastGroup.items.push(item);
-        lastGroup.end = Math.max(lastGroup.end, item.interval.end);
+  function maxConcurrentCount(items, target) {
+    const points = [];
+    for (const item of items) {
+      if (
+        item.interval.start < target.interval.end &&
+        item.interval.end > target.interval.start
+      ) {
+        points.push(
+          { position: item.interval.start, delta: 1 },
+          { position: item.interval.end, delta: -1 },
+        );
       }
     }
-    return groups;
+
+    points.sort(
+      (left, right) => left.position - right.position || left.delta - right.delta,
+    );
+    let active = 0;
+    let maximum = 0;
+    for (const point of points) {
+      active += point.delta;
+      maximum = Math.max(maximum, active);
+    }
+    return Math.max(1, maximum);
   }
 
   function redrawConflicts(bindings) {
@@ -561,28 +645,21 @@
     }
 
     for (const [day, dayBindings] of byDay) {
-      for (const group of conflictGroups(dayBindings)) {
-        const laneEnds = [];
-        const laneItems = [];
-        for (const item of group.items) {
-          let lane = laneEnds.findIndex((end) => end <= item.interval.start);
-          if (lane < 0) {
-            lane = laneEnds.length;
-            laneEnds.push(item.interval.end);
-            laneItems.push([]);
-          } else {
-            laneEnds[lane] = item.interval.end;
-          }
-          laneItems[lane].push(item.binding);
+      const items = sortedIntervals(dayBindings);
+      const laneEnds = [];
+      for (const item of items) {
+        let lane = laneEnds.findIndex((end) => end <= item.interval.start);
+        if (lane < 0) {
+          lane = laneEnds.length;
+          laneEnds.push(item.interval.end);
+        } else {
+          laneEnds[lane] = item.interval.end;
         }
 
-        const laneWidth = DAY_WIDTH / laneEnds.length;
-        laneItems.forEach((items, lane) => {
-          for (const binding of items) {
-            binding.element.style.left = `${day * DAY_WIDTH + lane * laneWidth}%`;
-            binding.element.style.width = `${laneWidth}%`;
-          }
-        });
+        const laneCount = maxConcurrentCount(items, item);
+        const laneWidth = DAY_WIDTH / laneCount;
+        item.binding.element.style.left = `${day * DAY_WIDTH + lane * laneWidth}%`;
+        item.binding.element.style.width = `${laneWidth}%`;
       }
     }
   }
@@ -613,6 +690,15 @@
     }
 
     redrawConflicts(visibleBindings);
+    for (const binding of context.events || []) {
+      API.state.lastAppliedStyles.set(binding.element, {
+        display: binding.element.style.display || "",
+        left: binding.element.style.left || "",
+        width: binding.element.style.width || "",
+        top: binding.element.style.top || "",
+        height: binding.element.style.height || "",
+      });
+    }
     updateToolbarState();
   }
 
@@ -1249,5 +1335,6 @@
   API.setShowWaitlisted = setShowWaitlisted;
   API.addFilterButtons = addFilterButtons;
   API.removeToolbars = removeToolbars;
+  API.restoreManagedEvents = restoreManagedEvents;
   API.closePopover = closePopover;
 })(globalThis);

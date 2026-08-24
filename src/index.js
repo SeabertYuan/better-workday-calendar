@@ -70,6 +70,8 @@
     context: null,
     originalDisplays: new WeakMap(),
     originalPositions: new WeakMap(),
+    originalEventAttributes: new WeakMap(),
+    lastAppliedStyles: new WeakMap(),
     courseColors: new Map(),
     popover: null,
     started: false,
@@ -757,24 +759,53 @@
       return true;
     }
     const inlineStyle = element.getAttribute("style") || "";
-    const hasPosition = /(?:^|;)\s*(?:left|top)\s*:/i.test(inlineStyle);
-    const hasSize = /(?:^|;)\s*(?:width|height)\s*:/i.test(inlineStyle);
     const hasKnownMarker = matchesAny(element, EVENT_SELECTORS.slice(0, 4));
-    return hasKnownMarker || (hasPosition && hasSize);
+    if (hasKnownMarker) return true;
+
+    const hasHorizontalGeometry = ["left", "width"].every((property) =>
+      new RegExp(`(?:^|;)\\s*${property}\\s*:`, "i").test(inlineStyle),
+    );
+    if (!hasHorizontalGeometry || !getText(element)) return false;
+    if (global.getComputedStyle) {
+      const computed = global.getComputedStyle(element);
+      const position = computed.position;
+      if (position !== "absolute" && position !== "relative") return false;
+      if (computed.top === "auto" || computed.height === "auto") return false;
+    } else if (
+      !/(?:^|;)\s*top\s*:/i.test(inlineStyle) ||
+      !/(?:^|;)\s*height\s*:/i.test(inlineStyle)
+    ) {
+      return false;
+    }
+    return true;
   }
 
-  function findEventCandidates(root) {
+  function findEventCandidates(root, records = null) {
     if (!root) return [];
     const candidates = [];
     for (const selector of EVENT_SELECTORS) {
       candidates.push(...safeQueryAll(root, selector));
     }
-    if (isCalendarEventCandidate(root)) candidates.push(root);
+    if (
+      matchesAny(root, EVENT_SELECTORS.slice(0, 4)) ||
+      root.getAttribute?.("data-workday-term-calendar-generated") === "waitlisted"
+    ) {
+      candidates.push(root);
+    }
     return unique(candidates).filter((element) => {
       if (!isCalendarEventCandidate(element)) return false;
       const hasKnownEventMarker = matchesAny(element, EVENT_SELECTORS.slice(0, 4));
       const isGenerated =
         element.getAttribute("data-workday-term-calendar-generated") === "waitlisted";
+      if (
+        !hasKnownEventMarker &&
+        !isGenerated &&
+        safeQueryAll(element, '[style*="left"]').some(
+          (child) => child !== element && isCalendarEventCandidate(child),
+        )
+      ) {
+        return false;
+      }
       // Workday renders the real calendar surface as a table. Only reject
       // style-only candidates inside tables; explicit calendar event markers
       // are valid even when their parent is a table.
@@ -786,6 +817,14 @@
         element.getAttribute("data-workday-term-calendar-generated") === "waitlisted" ||
         element.getAttribute("data-workday-term-calendar-event") === "true"
       );
+    }).filter((element) => {
+      if (!records || !records.length) return true;
+      if (
+        element.getAttribute("data-workday-term-calendar-generated") === "waitlisted"
+      ) {
+        return true;
+      }
+      return Boolean(matchEventToRecord(element, records));
     });
   }
 
@@ -809,7 +848,7 @@
     for (const selector of SURFACE_SELECTORS) {
       candidates.push(...safeQueryAll(global.document, selector));
     }
-    const eventCandidates = findEventCandidates(global.document);
+    const eventCandidates = findEventCandidates(global.document, records);
     const scored = unique(candidates)
       .map((candidate) => {
         const text = getText(candidate).toLowerCase();
@@ -961,12 +1000,67 @@
     };
   }
 
+  function inlineStyleSnapshot(element) {
+    return {
+      display: element.style.display || "",
+      left: element.style.left || "",
+      width: element.style.width || "",
+      top: element.style.top || "",
+      height: element.style.height || "",
+    };
+  }
+
+  function sameInlineStyle(left, right) {
+    return Boolean(
+      left &&
+        right &&
+        ["display", "left", "width", "top", "height"].every(
+          (property) => left[property] === right[property],
+        ),
+    );
+  }
+
   function rememberElement(element, generated = false) {
     if (!state.originalDisplays.has(element)) {
       state.originalDisplays.set(element, generated ? "" : element.style.display || "");
     }
-    if (!state.originalPositions.has(element) || generated) {
-      state.originalPositions.set(element, positionFor(element));
+
+    const currentStyles = inlineStyleSnapshot(element);
+    const lastApplied = state.lastAppliedStyles.get(element);
+    const savedPosition = state.originalPositions.get(element);
+    let position = positionFor(element);
+    if (!generated && lastApplied && savedPosition && !sameInlineStyle(currentStyles, lastApplied)) {
+      const temporarilyRestored = [];
+      for (const property of ["left", "width"]) {
+        if (currentStyles[property] !== lastApplied[property]) continue;
+        temporarilyRestored.push({ property, value: element.style[property] });
+        element.style[property] = savedPosition.inline[property];
+      }
+      position = positionFor(element);
+      for (const { property, value } of temporarilyRestored) {
+        element.style[property] = value;
+      }
+    }
+
+    if (
+      generated ||
+      !state.originalPositions.has(element) ||
+      (lastApplied && !sameInlineStyle(currentStyles, lastApplied))
+    ) {
+      state.originalPositions.set(element, position);
+      if (!generated) state.originalDisplays.set(element, currentStyles.display);
+    }
+
+    if (!generated && !state.originalEventAttributes.has(element)) {
+      state.originalEventAttributes.set(element, {
+        title: element.getAttribute("title"),
+        tabIndex: element.getAttribute("tabindex"),
+        marker: element.getAttribute("data-workday-term-calendar-event"),
+        status: element.getAttribute("data-workday-registration-status"),
+        courseId: element.getAttribute("data-workday-course-id"),
+        courseColor: element.style.getPropertyValue("--workday-course-color"),
+        managedClass: element.classList.contains("ubc-workday-managed-event"),
+      });
     }
   }
 
@@ -1115,9 +1209,29 @@
       }
       return 1;
     };
-    return bindings.filter((binding, index) => {
-      return !bindings.some((other, otherIndex) => {
-        if (index === otherIndex || binding.record !== other.record) return false;
+    const seenGeometry = new Set();
+    const ordered = [...bindings].sort(
+      (left, right) => priority(right.element) - priority(left.element),
+    );
+    return ordered.filter((binding) => {
+      const position = state.originalPositions.get(binding.element);
+      const recordKey = compactKey(
+        binding.record.fullCode || binding.record.name || binding.record.courseId,
+      );
+      const geometryKey = position
+        ? [
+            recordKey,
+            position.leftPercent,
+            position.widthPercent,
+            position.topPixels,
+            position.heightPixels,
+          ].join("|")
+        : "";
+      if (geometryKey && seenGeometry.has(geometryKey)) return false;
+      if (geometryKey) seenGeometry.add(geometryKey);
+
+      return !bindings.some((other) => {
+        if (binding === other || binding.record !== other.record) return false;
         const bindingElement = binding.element;
         const otherElement = other.element;
         if (!otherElement.contains(bindingElement)) return false;
@@ -1139,7 +1253,7 @@
       return context;
     }
 
-    const nativeCandidates = findEventCandidates(surface).filter(
+    const nativeCandidates = findEventCandidates(surface, records).filter(
       (element) =>
         element.getAttribute("data-workday-term-calendar-generated") !== "waitlisted",
     );
@@ -1164,7 +1278,7 @@
       }),
     );
     const bindings = [];
-    for (const element of findEventCandidates(surface)) {
+    for (const element of findEventCandidates(surface, records)) {
       const generatedKey = element.getAttribute("data-workday-generated-key");
       const record = generatedKey
         ? generatedRecords.get(generatedKey)

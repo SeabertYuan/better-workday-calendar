@@ -5,6 +5,7 @@
 
   let refreshTimer = null;
   let observer = null;
+  let lastUrl = "";
   const TARGET_PATH = /^\/ubc\/d\/task\/2998\$28771\.htmld$/i;
   const CALENDAR_MARKER_SELECTOR = [
     '[data-automation-id="calendarevent"]',
@@ -72,10 +73,29 @@
     );
   }
 
+  function isManagedStyleCurrent(target) {
+    const expected = API.state.lastAppliedStyles.get(target);
+    if (!expected) return false;
+    return ["display", "left", "width", "top", "height"].every(
+      (property) => (target.style[property] || "") === (expected[property] || ""),
+    );
+  }
+
   function isExtensionOnlyMutation(mutations) {
     if (!mutations.length) return true;
     return mutations.every((mutation) => {
       if (mutation.type === "attributes") {
+        if (
+          mutation.attributeName === "style" &&
+          /(?:^|;)\s*(?:left|top|width|height)\s*:/i.test(
+            `${mutation.target.getAttribute("style") || ""};${mutation.oldValue || ""}`,
+          ) &&
+          mutation.target.matches(
+            '[data-workday-term-calendar-event="true"], [data-workday-term-calendar-generated="waitlisted"]',
+          )
+        ) {
+          return isManagedStyleCurrent(mutation.target);
+        }
         return isExtensionNode(mutation.target);
       }
       const nodes = [
@@ -86,12 +106,43 @@
     });
   }
 
+  function clearExtensionState() {
+    API.closePopover();
+    if (typeof API.restoreManagedEvents === "function") {
+      API.restoreManagedEvents();
+    }
+    API.removeToolbars();
+    API.state.context = null;
+  }
+
+  function stopObserving() {
+    if (!observer) return;
+    observer.disconnect();
+    observer = null;
+  }
+
+  function isRelevantMutation(mutation) {
+    if (mutation.type !== "attributes" || mutation.attributeName !== "style") {
+      return true;
+    }
+    const currentStyle = mutation.target.getAttribute("style") || "";
+    const previousStyle = mutation.oldValue || "";
+    return /(?:^|;)\s*(?:left|top|width|height)\s*:/i.test(
+      `${currentStyle};${previousStyle}`,
+    );
+  }
+
   function refresh() {
     refreshTimer = null;
+    if (!isTargetPage()) {
+      stopObserving();
+      clearExtensionState();
+      return;
+    }
+    observe();
+
     if (!hasCourseCalendarContent()) {
-      API.closePopover();
-      API.removeToolbars();
-      API.state.context = null;
+      clearExtensionState();
       return;
     }
 
@@ -107,8 +158,7 @@
     }
 
     if (!context.surface || !context.records.length) {
-      API.removeToolbars();
-      API.state.context = null;
+      clearExtensionState();
       return;
     }
 
@@ -128,37 +178,42 @@
   }
 
   function observeNavigation() {
-    if (API.__navigationInstalled || !global.history) return;
+    if (API.__navigationInstalled) return;
     API.__navigationInstalled = true;
+    lastUrl = global.location && global.location.href;
     const notify = () => scheduleRefresh();
     global.addEventListener("popstate", notify);
     global.addEventListener("hashchange", notify);
-
-    ["pushState", "replaceState"].forEach((method) => {
-      const original = global.history[method];
-      if (typeof original !== "function") return;
-      global.history[method] = function (...args) {
-        const result = original.apply(this, args);
-        notify();
-        return result;
-      };
-    });
+    // Workday changes the URL from the page world, so patching history here is
+    // not reliable from an isolated content-script world. A single lightweight
+    // poll keeps SPA navigation detection independent of that boundary.
+    global.setInterval(() => {
+      const currentUrl = global.location && global.location.href;
+      if (currentUrl === lastUrl) return;
+      lastUrl = currentUrl;
+      notify();
+    }, 500);
   }
 
   function observe() {
-    if (observer || !document.body) return;
+    if (observer || !document.body || !isTargetPage()) return;
     observer = new MutationObserver((mutations) => {
-      if (!isExtensionOnlyMutation(mutations)) scheduleRefresh();
+      const relevantMutations = mutations.filter(isRelevantMutation);
+      if (relevantMutations.length && !isExtensionOnlyMutation(relevantMutations)) {
+        scheduleRefresh();
+      }
     });
     observer.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
+      attributeOldValue: true,
       attributeFilter: [
         "aria-label",
         "class",
         "data-automation-id",
         "data-testid",
+        "style",
         "title",
       ],
     });
@@ -169,7 +224,6 @@
     API.state.started = true;
     observeNavigation();
     refresh();
-    observe();
   }
 
   if (document.readyState === "loading") {

@@ -95,6 +95,14 @@ function getCalendarLocation(meeting) {
   return String(meeting.text || "").split("|")[3]?.trim() || "";
 }
 
+function escapeIcsText(value) {
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\r\n|\r|\n/g, "\\n")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,");
+}
+
 function getCalendarObjects() {
   const records = workdayCalendarAPI.state.context?.records || [];
   const objects = [];
@@ -175,7 +183,7 @@ function generateUUID() {
 }
 
 function generateSummary(calendarObject) {
-  return `SUMMARY:${calendarObject.courseName}\r\n`;
+  return `SUMMARY:${escapeIcsText(calendarObject.courseName)}\r\n`;
 }
 
 function generateStartDate(calendarObject) {
@@ -205,10 +213,9 @@ function generateStartEndDate(calendarObject) {
 }
 
 function generateLocation(calendarObject) {
-  return `LOCATION:${calendarObject.location}\r\n`;
+  return `LOCATION:${escapeIcsText(calendarObject.location)}\r\n`;
 }
 
 if (workdayCalendarAPI) {
   workdayCalendarAPI.addExportButton = createExportButton;
-  workdayCalendarAPI.createCalendarString = createCalendarString;
 }
