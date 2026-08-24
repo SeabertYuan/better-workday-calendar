@@ -6,7 +6,10 @@
   let refreshTimer = null;
   let observer = null;
   let lastUrl = "";
-  const TARGET_PATH = /^\/ubc\/d\/task\/2998\$28771\.htmld$/i;
+  const TARGET_PATHS = [
+    /^\/ubc\/d\/task\/2998\$28771(?:\.htmld)?\/?$/i,
+    /^\/ubc\/d\/inst\/1\$37\/10089(?:\.htmld)?\/?$/i,
+  ];
   const CALENDAR_MARKER_SELECTOR = [
     '[data-automation-id="calendarevent"]',
     '[data-automation-id="calendarEvent"]',
@@ -29,7 +32,8 @@
   }
 
   function isTargetPage() {
-    return TARGET_PATH.test(global.location && global.location.pathname);
+    const pathname = global.location && global.location.pathname;
+    return TARGET_PATHS.some((targetPath) => targetPath.test(pathname || ""));
   }
 
   function hasCloseControl(surface) {

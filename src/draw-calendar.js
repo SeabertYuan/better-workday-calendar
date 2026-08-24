@@ -22,7 +22,21 @@
     "#C4B3A5",
     "#AFC8B8",
     "#D7B7D9",
+    "#F0B7A4",
+    "#BFD3F2",
+    "#D7E8A8",
+    "#F6C4D8",
+    "#B8E0D2",
+    "#E4C1F9",
+    "#F9E2AE",
+    "#C7CEEA",
   ];
+  const PALETTE_RGB = PALETTE.map((hex) => ({
+    red: Number.parseInt(hex.slice(1, 3), 16),
+    green: Number.parseInt(hex.slice(3, 5), 16),
+    blue: Number.parseInt(hex.slice(5, 7), 16),
+  }));
+  const GEOMETRY_BOUNDARY_TOLERANCE_PX = 2;
 
   function normaliseText(value) {
     return String(value || "")
@@ -482,23 +496,140 @@
     }
   }
 
+  function colorHash(key) {
+    let hash = 0;
+    for (const character of key) {
+      hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+    }
+    return hash;
+  }
+
+  function recordColorKey(record) {
+    return (
+      compactKey(record && (record.courseId || record.displayName || record.name)) ||
+      "UNKNOWN"
+    );
+  }
+
+  function findAvailableColorSlot(key, occupiedSlots) {
+    if (!PALETTE.length) return null;
+    const preferredSlot = colorHash(key) % PALETTE.length;
+    if (!occupiedSlots.size) return preferredSlot;
+
+    // Spread adjacent course assignments across the palette. The score is a
+    // colour-distance metric, so every new course is as different as possible
+    // from the colours already used while the hash remains the tie-breaker.
+    let bestSlot = null;
+    let bestDistance = -Infinity;
+    let bestTieDistance = Infinity;
+    for (let slot = 0; slot < PALETTE.length; slot += 1) {
+      if (occupiedSlots.has(slot)) continue;
+      const distance = Math.min(
+        ...Array.from(occupiedSlots, (occupiedSlot) =>
+          colourDistance(slot, occupiedSlot),
+        ),
+      );
+      const tieDistance =
+        (slot - preferredSlot + PALETTE.length) % PALETTE.length;
+      if (
+        distance > bestDistance + 0.000001 ||
+        (Math.abs(distance - bestDistance) <= 0.000001 &&
+          tieDistance < bestTieDistance)
+      ) {
+        bestSlot = slot;
+        bestDistance = distance;
+        bestTieDistance = tieDistance;
+      }
+    }
+    return bestSlot;
+  }
+
+  function colourDistance(leftSlot, rightSlot) {
+    const left = PALETTE_RGB[leftSlot];
+    const right = PALETTE_RGB[rightSlot];
+    const redMean = (left.red + right.red) / 2;
+    const red = left.red - right.red;
+    const green = left.green - right.green;
+    const blue = left.blue - right.blue;
+    return Math.sqrt(
+      ((512 + redMean) * red * red) / 256 +
+        4 * green * green +
+        ((767 - redMean) * blue * blue) / 256,
+    );
+  }
+
+  function getOverflowColor(key, usedColors) {
+    const hash = colorHash(key);
+    for (let offset = 0; offset < 360; offset += 1) {
+      const hue = (hash + offset * 17) % 360;
+      const color = `hsl(${hue}, 48%, 78%)`;
+      if (!usedColors.has(color)) return color;
+    }
+    return `hsl(${hash % 360}, 48%, 78%)`;
+  }
+
+  function assignCourseColors(records = []) {
+    const colors = API.state.courseColors;
+    const slots =
+      API.state.courseColorSlots ||
+      (API.state.courseColorSlots = new Map());
+    const keys = Array.from(new Set(records.map(recordColorKey))).sort();
+    const occupiedSlots = new Set();
+    const usedColors = new Set();
+
+    // Preserve assignments already made during this page session whenever
+    // possible. This keeps a refresh from recolouring courses that remain open.
+    for (const key of keys) {
+      const slot = slots.get(key);
+      if (
+        Number.isInteger(slot) &&
+        slot >= 0 &&
+        slot < PALETTE.length &&
+        !occupiedSlots.has(slot)
+      ) {
+        occupiedSlots.add(slot);
+        colors.set(key, PALETTE[slot]);
+        usedColors.add(PALETTE[slot]);
+      }
+    }
+
+    for (const key of keys) {
+      if (colors.has(key) && usedColors.has(colors.get(key))) continue;
+
+      const slot = findAvailableColorSlot(key, occupiedSlots);
+      if (slot !== null) {
+        slots.set(key, slot);
+        occupiedSlots.add(slot);
+        colors.set(key, PALETTE[slot]);
+        usedColors.add(PALETTE[slot]);
+        continue;
+      }
+
+      const color = getOverflowColor(key, usedColors);
+      colors.set(key, color);
+      usedColors.add(color);
+    }
+  }
+
   function getCourseColor(courseId) {
     const key = compactKey(courseId) || "UNKNOWN";
     const colors = API.state.courseColors;
+    if (!colors.has(key)) {
+      assignCourseColors([
+        ...(API.state.context?.records || []),
+        { courseId: key },
+      ]);
+    }
     if (colors.has(key)) return colors.get(key);
 
-    let color;
-    if (colors.size < PALETTE.length) {
-      color = PALETTE[colors.size];
-    } else {
-      let hash = 0;
-      for (const character of key) {
-        hash = (hash * 31 + character.charCodeAt(0)) % 360;
-      }
-      color = `hsl(${hash}, 48%, 78%)`;
-    }
+    const color = getOverflowColor(key, new Set(colors.values()));
     colors.set(key, color);
     return color;
+  }
+
+  function termLabel(term) {
+    if (term === 3) return "Full year";
+    return term === 2 ? "Term 2" : "Term 1";
   }
 
   function recordLabel(record) {
@@ -556,7 +687,7 @@
   function decorateEvent(binding) {
     const { element, record } = binding;
     const status = record.registrationStatus === "waitlisted" ? "waitlisted" : "registered";
-    const term = record.term === 2 ? "Term 2" : "Term 1";
+    const term = termLabel(record.term);
     const details = record.details || record.rowText || "";
     const title = `${record.name || recordLabel(record)}\n${
       status === "waitlisted" ? "Waitlisted" : "Registered"
@@ -586,7 +717,33 @@
     return Math.max(0, Math.min(6, Math.floor(left / DAY_WIDTH + 0.01)));
   }
 
-  function getInterval(binding) {
+  function getScheduleInterval(binding) {
+    const record = binding.record;
+    const meetings = Array.isArray(record && record.meetings)
+      ? record.meetings
+      : [];
+    const schedule =
+      meetings.length === 1
+        ? meetings[0]
+        : meetings.length === 0
+          ? record
+          : null;
+    if (
+      schedule &&
+      Number.isFinite(schedule.startMinutes) &&
+      Number.isFinite(schedule.endMinutes) &&
+      schedule.endMinutes > schedule.startMinutes
+    ) {
+      return {
+        start: schedule.startMinutes,
+        end: schedule.endMinutes,
+        tolerance: 0,
+      };
+    }
+    return null;
+  }
+
+  function getGeometryInterval(binding) {
     const position = getOriginalPosition(binding.element);
     if (
       !position ||
@@ -599,12 +756,28 @@
     return {
       start: position.topPixels,
       end: position.topPixels + position.heightPixels,
+      tolerance: GEOMETRY_BOUNDARY_TOLERANCE_PX,
     };
   }
 
+  function intervalsOverlap(left, right) {
+    const tolerance = Math.max(left.tolerance || 0, right.tolerance || 0);
+    return (
+      left.start < right.end - tolerance &&
+      left.end > right.start + tolerance
+    );
+  }
+
   function sortedIntervals(bindings) {
+    const scheduleIntervals = bindings.map(getScheduleInterval);
+    const useScheduleIntervals = scheduleIntervals.every(Boolean);
     return bindings
-      .map((binding) => ({ binding, interval: getInterval(binding) }))
+      .map((binding, index) => ({
+        binding,
+        interval: useScheduleIntervals
+          ? scheduleIntervals[index]
+          : getGeometryInterval(binding),
+      }))
       .filter((item) => item.interval)
       .sort((left, right) => left.interval.start - right.interval.start);
   }
@@ -612,10 +785,7 @@
   function maxConcurrentCount(items, target) {
     const points = [];
     for (const item of items) {
-      if (
-        item.interval.start < target.interval.end &&
-        item.interval.end > target.interval.start
-      ) {
+      if (intervalsOverlap(item.interval, target.interval)) {
         points.push(
           { position: item.interval.start, delta: 1 },
           { position: item.interval.end, delta: -1 },
@@ -636,9 +806,13 @@
   }
 
   function redrawConflicts(bindings) {
+    const viewInfo = API.getCalendarViewInfo
+      ? API.getCalendarViewInfo(API.state.context?.surface, bindings)
+      : { singleDay: false };
+    const columnWidth = viewInfo.singleDay ? 100 : DAY_WIDTH;
     const byDay = new Map();
     for (const binding of bindings) {
-      const day = getDay(binding.element);
+      const day = viewInfo.singleDay ? 0 : getDay(binding.element);
       if (day === null) continue;
       if (!byDay.has(day)) byDay.set(day, []);
       byDay.get(day).push(binding);
@@ -648,17 +822,19 @@
       const items = sortedIntervals(dayBindings);
       const laneEnds = [];
       for (const item of items) {
-        let lane = laneEnds.findIndex((end) => end <= item.interval.start);
+        let lane = laneEnds.findIndex(
+          (end) => !intervalsOverlap(end, item.interval),
+        );
         if (lane < 0) {
           lane = laneEnds.length;
-          laneEnds.push(item.interval.end);
+          laneEnds.push(item.interval);
         } else {
-          laneEnds[lane] = item.interval.end;
+          laneEnds[lane] = item.interval;
         }
 
         const laneCount = maxConcurrentCount(items, item);
-        const laneWidth = DAY_WIDTH / laneCount;
-        item.binding.element.style.left = `${day * DAY_WIDTH + lane * laneWidth}%`;
+        const laneWidth = columnWidth / laneCount;
+        item.binding.element.style.left = `${day * columnWidth + lane * laneWidth}%`;
         item.binding.element.style.width = `${laneWidth}%`;
       }
     }
@@ -666,7 +842,7 @@
 
   function isShown(record) {
     return (
-      record.term === API.state.activeTerm &&
+      (record.term === API.state.activeTerm || record.term === 3) &&
       (record.registrationStatus !== "waitlisted" || API.state.showWaitlisted)
     );
   }
@@ -675,6 +851,7 @@
     API.state.activeTerm = term === 2 ? 2 : 1;
     const context = API.state.context;
     if (!context || !context.surface) return;
+    assignCourseColors(context.records || []);
 
     const visibleBindings = [];
     for (const binding of context.events || []) {
@@ -827,12 +1004,28 @@
     const nativeEvent = surface.querySelector(
       '[data-automation-id="calendarevent"], [data-automation-id="calendarEvent"], .WMSC.WKSC.WLTC.WEUC',
     );
-    return nativeEvent
-      ? nativeEvent.closest('table,[role="grid"],[role="presentation"]') ||
-          nativeEvent.parentElement
-      : surface.querySelector(
-          '[role="grid"], [data-automation-id*="calendar"], [class*="Calendar"], [class*="calendar"]',
-        );
+    if (nativeEvent) {
+      return (
+        nativeEvent.closest('table,[role="grid"],[role="presentation"]') ||
+        nativeEvent.offsetParent ||
+        nativeEvent.parentElement
+      );
+    }
+
+    const fallbackEvent = API.findEventCandidates
+      ? API.findEventCandidates(surface, API.state.context?.records || [])[0]
+      : null;
+    if (fallbackEvent) {
+      return (
+        fallbackEvent.closest('table,[role="grid"],[role="presentation"]') ||
+        fallbackEvent.offsetParent ||
+        fallbackEvent.parentElement
+      );
+    }
+
+    return surface.querySelector(
+      '[role="grid"], [data-automation-id*="calendar"], [class*="Calendar"], [class*="calendar"]',
+    );
   }
 
   function findCalendarContainer(surface, titleBarElement, row) {
@@ -1167,7 +1360,7 @@
       record.registrationStatus === "waitlisted" ? "Waitlisted" : "Registered";
     const term = document.createElement("div");
     term.className = "ubc-workday-detail-popover-term";
-    term.textContent = record.term === 2 ? "Term 2" : "Term 1";
+    term.textContent = termLabel(record.term);
     const meta = document.createElement("div");
     meta.className = "ubc-workday-detail-popover-meta";
     meta.append(status, term);

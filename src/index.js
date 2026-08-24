@@ -73,6 +73,7 @@
     originalEventAttributes: new WeakMap(),
     lastAppliedStyles: new WeakMap(),
     courseColors: new Map(),
+    courseColorSlots: new Map(),
     popover: null,
     started: false,
   };
@@ -275,6 +276,23 @@
       String(date.getMonth() + 1).padStart(2, "0"),
       String(date.getDate()).padStart(2, "0"),
     ].join("-");
+  }
+
+  function uniqueDates(dates) {
+    const seen = new Set();
+    return dates
+      .filter((date) => date instanceof Date && !Number.isNaN(date.getTime()))
+      .map((date) => {
+        const key = dateKey(date);
+        return { key, date };
+      })
+      .filter(({ key }) => {
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map(({ date }) => date)
+      .sort((left, right) => left - right);
   }
 
   function extractDates(value) {
@@ -637,10 +655,17 @@
       .filter(Boolean);
     const dates = extractDates(rowText);
     const firstMeeting = meetings[0];
-    const startDate = firstMeeting ? firstMeeting.startDate : dates[0] || null;
-    const endDate = firstMeeting
-      ? firstMeeting.endDate
-      : dates[1] || dates[0] || null;
+    const meetingStartDates = meetings.map((meeting) => meeting.startDate);
+    const meetingEndDates = meetings.map(
+      (meeting) => meeting.endDate || meeting.startDate,
+    );
+    const sortedMeetingEndDates = uniqueDates(meetingEndDates);
+    const startDate = uniqueDates(meetingStartDates)[0] || dates[0] || null;
+    const endDate =
+      sortedMeetingEndDates[sortedMeetingEndDates.length - 1] ||
+      dates[1] ||
+      dates[0] ||
+      null;
     const label = getTableLabel(table);
     const registrationStatus = /wait\s*list|waitlisted/i.test(
       `${label} ${rowText}`,
@@ -685,6 +710,35 @@
     };
   }
 
+  function dateBasedTerm(record) {
+    const startDate = record && record.startDate;
+    const endDate = record && (record.endDate || record.startDate);
+    if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) {
+      return null;
+    }
+
+    const startMonth = startDate.getMonth() + 1;
+    const endMonth =
+      endDate instanceof Date && !Number.isNaN(endDate.getTime())
+        ? endDate.getMonth() + 1
+        : startMonth;
+    let term = 0;
+
+    // Preserve Workday's academic-calendar semantics from the original
+    // implementation: August/September starts are Term 1, January/April
+    // courses are Term 2, and May-August or September-April spans are shown
+    // in both terms.
+    if ([8, 9, 5].includes(startMonth)) term += 1;
+    if ([4, 8].includes(endMonth)) term += 2;
+    if (term) return term;
+
+    // Keep a deterministic fallback for date formats that do not line up
+    // with the month boundaries above.
+    if (startMonth >= 8 || startMonth === 5) return 1;
+    if (startMonth <= 4) return 2;
+    return null;
+  }
+
   function assignFallbackTerms(records) {
     const explicitByDate = new Map();
     for (const record of records) {
@@ -699,14 +753,15 @@
       }
     }
 
-    const dates = unique(
+    for (const record of records) {
+      if (!record.term) record.term = dateBasedTerm(record);
+    }
+
+    const dates = uniqueDates(
       records
         .map((record) => record.startDate)
-        .filter((date) => date instanceof Date && !Number.isNaN(date.getTime()))
-        .map((date) => dateKey(date)),
-    )
-      .map((key) => parseDate(key))
-      .sort((left, right) => left - right);
+        .filter((date) => date instanceof Date && !Number.isNaN(date.getTime())),
+    );
 
     let splitIndex = -1;
     let largestGap = -1;
@@ -718,9 +773,13 @@
       }
     }
 
+    // Only use the relative-date fallback when there is a real semester-sized
+    // gap. Courses that start a few days apart are commonly in the same term
+    // and must not be split based on their order in the table.
+    const hasSemesterGap = largestGap >= 45 * 24 * 60 * 60 * 1000;
     for (const record of records) {
       if (record.term) continue;
-      if (!record.startDate || splitIndex < 0) {
+      if (!record.startDate || splitIndex < 0 || !hasSemesterGap) {
         record.term = 1;
         continue;
       }
@@ -729,6 +788,86 @@
       );
       record.term = position > splitIndex ? 2 : 1;
     }
+  }
+
+  function getCalendarViewInfo(surface, bindings = []) {
+    if (!surface) {
+      return { singleDay: false, visibleDates: [], visibleDays: [] };
+    }
+
+    const rangeValues = [
+      surface.getAttribute &&
+        surface.getAttribute("data-automation-visiblerangeinterval"),
+      surface.getAttribute &&
+        surface.getAttribute("data-automation-visible-range-interval"),
+      ...safeQueryAll(
+        surface,
+        "[data-automation-visiblerangeinterval],[data-automation-visible-range-interval],[data-visiblerangeinterval]",
+      ).flatMap((element) => [
+        element.getAttribute("data-automation-visiblerangeinterval"),
+        element.getAttribute("data-automation-visible-range-interval"),
+        element.getAttribute("data-visiblerangeinterval"),
+      ]),
+    ]
+      .filter(Boolean)
+      .map((value) => String(value).toUpperCase());
+
+    const headerElements = unique(
+      safeQueryAll(
+        surface,
+        '[role="columnheader"],th,[data-automation-id*="date"],[data-automation-id*="day"],[data-testid*="date"],[data-testid*="day"]',
+      ),
+    );
+    const dateSources = headerElements;
+    const headerDayNames = unique(
+      dateSources.flatMap((element) => {
+        const attributes = [
+          element.getAttribute && element.getAttribute("aria-label"),
+          element.getAttribute && element.getAttribute("title"),
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return parseDayNumbers(`${getText(element)} ${attributes}`);
+      }),
+    );
+    const visibleDates = uniqueDates(
+      dateSources.flatMap((element) => {
+        const attributes = [
+          element.getAttribute && element.getAttribute("data-date"),
+          element.getAttribute && element.getAttribute("data-automation-date"),
+          element.getAttribute && element.getAttribute("aria-label"),
+          element.getAttribute && element.getAttribute("title"),
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return extractDates(`${getText(element)} ${attributes}`);
+      }),
+    );
+
+    const singleDay =
+      rangeValues.some((value) => /(?:^|_)1_DAY(?:$|_)/.test(value)) ||
+      visibleDates.length === 1 ||
+      bindings.some((binding) => {
+        const position = state.originalPositions.get(binding.element);
+        return position && Number.isFinite(position.widthPercent)
+          ? position.widthPercent > DAY_WIDTH * 2
+          : false;
+      });
+    const usefulVisibleDates =
+      singleDay || (visibleDates.length >= 5 && visibleDates.length <= 14)
+        ? visibleDates
+        : [];
+    const visibleDays = usefulVisibleDates.length
+      ? unique(usefulVisibleDates.map((date) => date.getDay()))
+      : singleDay && headerDayNames.length === 1
+        ? headerDayNames
+        : [];
+
+    return {
+      singleDay,
+      visibleDates: usefulVisibleDates,
+      visibleDays,
+    };
   }
 
   function discoverRecords() {
@@ -1076,20 +1215,97 @@
     return grid || surface;
   }
 
-  function calculateTimeScale(nativeEvents) {
+  function getCalendarDay(position) {
+    if (!position || !Number.isFinite(position.leftPercent)) return null;
+    const left = position.leftPercent;
+    const width = position.widthPercent;
+    if (Number.isFinite(width) && width > DAY_WIDTH * 2) return null;
+    if (Number.isFinite(width) && Math.abs(width - DAY_WIDTH) <= 1.5) {
+      return Math.max(0, Math.min(6, Math.round(left / DAY_WIDTH)));
+    }
+    return Math.max(0, Math.min(6, Math.floor(left / DAY_WIDTH + 0.01)));
+  }
+
+  function getNativeMeetingCandidates(binding, viewInfo) {
+    const record = binding && binding.record;
+    const meetings = Array.isArray(record && record.meetings)
+      ? record.meetings
+      : [];
+    if (!meetings.length) return [];
+
+    const position = state.originalPositions.get(binding.element);
+    let day = getCalendarDay(position);
+    if (
+      day === null &&
+      viewInfo?.singleDay &&
+      viewInfo.visibleDays &&
+      viewInfo.visibleDays.length === 1
+    ) {
+      day = viewInfo.visibleDays[0];
+    }
+    if (day === null) return meetings;
+
+    const dayMeetings = meetings.filter((meeting) =>
+      (meeting.meetingDays || []).includes(day),
+    );
+    return dayMeetings.length ? dayMeetings : meetings;
+  }
+
+  function selectNativeMeeting(binding, viewInfo) {
+    const candidates = getNativeMeetingCandidates(binding, viewInfo);
+    if (candidates.length <= 1) return candidates[0] || null;
+
+    const position = state.originalPositions.get(binding.element);
+    const top = position && position.topPixels;
+    const height = position && position.heightPixels;
+    const scored = candidates.map((meeting, index) => {
+      const duration = meeting.endMinutes - meeting.startMinutes;
+      const topScale =
+        Number.isFinite(top) && meeting.startMinutes > 0
+          ? top / meeting.startMinutes
+          : null;
+      const heightScale =
+        Number.isFinite(height) && duration > 0 ? height / duration : null;
+      let score = index;
+      if (topScale !== null && heightScale !== null) {
+        score = Math.abs(topScale - heightScale);
+      } else if (topScale !== null) {
+        score = topScale;
+      } else if (heightScale !== null) {
+        score = heightScale;
+      }
+      return { meeting, score };
+    });
+    scored.sort((left, right) => left.score - right.score);
+    return scored[0].meeting;
+  }
+
+  function calculateTimeScale(nativeEvents, viewInfo) {
     const ratios = [];
     for (const binding of nativeEvents) {
       const record = binding.record;
-      if (!record || !Number.isFinite(record.startMinutes)) continue;
       const position = state.originalPositions.get(binding.element);
+      if (!record || !position) continue;
+
+      const meeting = selectNativeMeeting(binding, viewInfo);
+      const startMinutes = meeting?.startMinutes ?? record.startMinutes;
+      const duration = meeting
+        ? meeting.endMinutes - meeting.startMinutes
+        : record.endMinutes - record.startMinutes;
+      let ratio = null;
       if (
-        !position ||
-        !Number.isFinite(position.topPixels) ||
-        record.startMinutes <= 0
+        Number.isFinite(position.topPixels) &&
+        Number.isFinite(startMinutes) &&
+        startMinutes > 0
       ) {
-        continue;
+        ratio = position.topPixels / startMinutes;
+      } else if (
+        Number.isFinite(position.heightPixels) &&
+        Number.isFinite(duration) &&
+        duration > 0
+      ) {
+        ratio = position.heightPixels / duration;
       }
-      const ratio = position.topPixels / record.startMinutes;
       if (ratio > 0 && Number.isFinite(ratio)) ratios.push(ratio);
     }
     if (!ratios.length) return 0.8;
@@ -1136,7 +1352,8 @@
         .filter((binding) => binding.record.registrationStatus === "waitlisted")
         .map((binding) => binding.record),
     );
-    const timeScale = calculateTimeScale(nativeBindings);
+    const viewInfo = getCalendarViewInfo(surface, nativeBindings);
+    const timeScale = calculateTimeScale(nativeBindings, viewInfo);
     const host = getEventHost(surface, nativeBindings.map((item) => item.element));
 
     for (const record of waitlisted) {
@@ -1158,6 +1375,29 @@
           : [];
       for (const meeting of meetings) {
         for (const day of meeting.meetingDays || []) {
+          if (viewInfo.singleDay) {
+            if (viewInfo.visibleDays.length && !viewInfo.visibleDays.includes(day)) {
+              continue;
+            }
+            if (!viewInfo.visibleDays.length && meeting.meetingDays.length !== 1) {
+              continue;
+            }
+          }
+          const hasMeetingDates =
+            meeting.startDate instanceof Date &&
+            !Number.isNaN(meeting.startDate.getTime());
+          if (
+            viewInfo.visibleDates.length &&
+            hasMeetingDates &&
+            !viewInfo.visibleDates.some(
+              (date) =>
+                date.getDay() === day &&
+                date >= meeting.startDate &&
+                date <= (meeting.endDate || meeting.startDate),
+            )
+          ) {
+            continue;
+          }
           const key = generatedEventKey(record, meeting, day);
           desired.add(key);
           let element = existing.get(key);
@@ -1315,5 +1555,6 @@
     parseDate,
     parseTimeRange,
     parseDayNumbers,
+    getCalendarViewInfo,
   };
 })(globalThis);

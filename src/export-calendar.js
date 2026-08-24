@@ -104,7 +104,11 @@ function escapeIcsText(value) {
 }
 
 function getCalendarObjects() {
-  const records = workdayCalendarAPI.state.context?.records || [];
+  const records = (workdayCalendarAPI.state.context?.records || []).filter(
+    (record) =>
+      record.registrationStatus !== "waitlisted" ||
+      workdayCalendarAPI.state.showWaitlisted,
+  );
   const objects = [];
   for (const record of records) {
     for (const meeting of record.meetings || []) {

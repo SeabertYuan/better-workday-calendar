@@ -19,6 +19,8 @@ This extension is available on [Google Chrome](https://chromewebstore.google.com
 
 The extension applies to the **View as Course Calendar** popup opened from **View My Courses**. It adds Term 1 / Term 2 filters, a waitlisted-course toggle, course details, and calendar export without changing other Workday pages.
 
+For local Firefox testing, run `npm run build:firefox` and load the generated `dist/firefox` directory as a temporary extension. This keeps the Firefox manifest and its relative assets packaged at the extension root.
+
 ## What's next?
 
 It's tough to keep track of what to do so we've made a list.
@@ -26,7 +28,7 @@ It's tough to keep track of what to do so we've made a list.
 #### Bug fixes:
 
 - [ ] Code optimization
-- [ ] Unit testing
+- [x] Unit testing
 - [ ] Fixing Workday bugs when viewport becomes sufficiently small
 - [x] Bug where buttons show up on wrong popup
 - [x] Hiding waitlisted courses
