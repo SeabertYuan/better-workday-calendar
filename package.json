@@ -1,13 +1,14 @@
 {
   "name": "better-workday-calendar",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "Improvements to UBC Workday",
   "main": "src/index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build:firefox": "node scripts/build-firefox.js"
   },
   "devDependencies": {
     "jest": "^29.7.0",

@@ -54,7 +54,9 @@ function parseCourseInfo() {
 }
 
 function getCourseName(courseRow) {
-  return courseRow.childNodes[4].innerText.slice(0, 14);
+  const courseCell = courseRow.cells?.[4] || courseRow.childNodes?.[4];
+  const text = courseCell?.innerText || courseCell?.textContent || "";
+  return text.trim().slice(0, 14);
 }
 
 
@@ -139,4 +141,9 @@ function getEndTime(block) {
 function getLocation(block) {
   let loc_section = block.split("|")[3].trim();
   return loc_section;
+}
+
+// Keep the legacy parser testable in Node without changing its browser behaviour.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { getCourseName };
 }

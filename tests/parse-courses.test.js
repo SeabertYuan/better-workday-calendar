@@ -12,8 +12,7 @@ test("tests getCourseName gets the course name", () => {
   const document = dom.window.document;
 
   let courseTables = document.getElementsByTagName("table");
-  let courseRow = courseTables[0].rows[3];
-  console.log(courseRow);
+  let courseRow = courseTables[0].rows[4];
 
   expect(getCourseName(courseRow)).toBe("CPSC_V 213-101");
 });
