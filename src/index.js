@@ -49,6 +49,24 @@
     '[data-automation-id="cell"]',
     '[data-testid="cell"]',
   ];
+  const STRUCTURAL_BREAK_TAGS = new Set([
+    "ADDRESS",
+    "ARTICLE",
+    "BR",
+    "DIV",
+    "LI",
+    "OL",
+    "P",
+    "SECTION",
+    "TABLE",
+    "TBODY",
+    "TD",
+    "TFOOT",
+    "TH",
+    "THEAD",
+    "TR",
+    "UL",
+  ]);
   const EVENT_SELECTORS = [
     ".WMSC.WKSC.WLTC.WEUC",
     '[data-automation-id="calendarevent"]',
@@ -120,17 +138,24 @@
     return normaliseText(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
   }
 
+  function getStructuralText(node) {
+    if (!node) return "";
+    if (node.nodeType === 3) return node.nodeValue || "";
+    if (node.nodeType !== 1) return "";
+
+    const tagName = String(node.tagName || "").toUpperCase();
+    if (tagName === "BR") return "\n";
+    const text = Array.from(node.childNodes || [])
+      .map(getStructuralText)
+      .join("");
+    return STRUCTURAL_BREAK_TAGS.has(tagName) ? `${text}\n` : text;
+  }
+
   function getText(element) {
     if (!element) return "";
-    const structuralText =
-      element.children && element.children.length
-        ? Array.from(element.children)
-            .map((child) => child.textContent || "")
-            .join(" ")
-        : element.textContent;
     const values = [
       element.innerText,
-      structuralText,
+      getStructuralText(element),
       element.getAttribute && element.getAttribute("aria-label"),
       element.getAttribute && element.getAttribute("title"),
       element.getAttribute && element.getAttribute("data-automation-label"),
@@ -138,14 +163,7 @@
       .filter(Boolean)
       .map((part) => normaliseText(part))
       .filter(Boolean);
-    const seen = new Set();
-    const parts = values.filter((part) => {
-      const key = part.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    return normaliseText(parts.join(" "));
+    return values[0] || "";
   }
 
   function getDirectMatches(parent, selectors) {
@@ -374,6 +392,65 @@
     };
   }
 
+  function parseLocationParts(parts) {
+    const values = (Array.isArray(parts) ? parts : [])
+      .map((part) => normaliseText(part))
+      .filter(Boolean);
+    const location = {
+      campus: "",
+      building: "",
+      floor: "",
+      room: "",
+      extras: [],
+      label: "",
+    };
+
+    if (!values.length) return location;
+
+    if (/^(?:UBCV|UBCO|UBC\s+(?:Vancouver|Okanagan))$/i.test(values[0])) {
+      location.campus = values.shift();
+    }
+
+    const addExtra = (value) => {
+      const text = normaliseText(value);
+      if (text && !location.extras.includes(text)) location.extras.push(text);
+    };
+
+    for (const value of values) {
+      const labelled = value.match(
+        /^(building|floor|room)\s*(?::|[-–—])?\s*(.+)$/i,
+      );
+      if (labelled) {
+        const field = labelled[1].toLowerCase();
+        const fieldValue = normaliseText(labelled[2]);
+        if (!fieldValue) continue;
+        if (field === "building" && !location.building) {
+          location.building = fieldValue;
+        } else if (field === "floor" && !location.floor) {
+          location.floor = fieldValue;
+        } else if (field === "room" && !location.room) {
+          location.room = fieldValue;
+        } else {
+          addExtra(value);
+        }
+        continue;
+      }
+
+      if (!location.building) location.building = value;
+      else addExtra(value);
+    }
+
+    location.label = [
+      location.building,
+      location.floor ? `Floor ${location.floor}` : "",
+      location.room ? `Room ${location.room}` : "",
+      ...location.extras,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    return location;
+  }
+
   function parseMeetingText(value) {
     const text = normaliseText(value);
     if (!text.includes("|")) return null;
@@ -391,6 +468,7 @@
       meetingDays,
       startMinutes: times.startMinutes,
       endMinutes: times.endMinutes,
+      location: parseLocationParts(parts.slice(3)),
       text,
     };
   }
@@ -1555,6 +1633,7 @@
     parseDate,
     parseTimeRange,
     parseDayNumbers,
+    parseLocationParts,
     getCalendarViewInfo,
   };
 })(globalThis);

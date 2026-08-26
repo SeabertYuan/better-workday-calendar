@@ -39,6 +39,12 @@ function courseRowWithMeetings(code, meetings) {
     .join("")}</tr>`;
 }
 
+function courseRowWithMeetingList(code, meetings) {
+  return `<tr><td>${code}</td><td><div><ul>${meetings
+    .map((meeting) => `<li><div>${meeting}</div></li>`)
+    .join("")}</ul></div></td></tr>`;
+}
+
 function calendarPopup(event, attributes = "") {
   return `
     <div role="dialog" aria-modal="true">
@@ -312,6 +318,259 @@ test("places controls when events are found through style-only fallback", () => 
   expect(
     context.surface.querySelector('[data-workday-term-calendar-toolbar="true"]'),
   ).not.toBeNull();
+});
+
+test("parses the campus, building, floor, and room from meeting locations", () => {
+  const meeting =
+    "2026-09-09 - 2026-12-07 | Mon Wed Fri | 10:00 a.m. - 11:00 a.m. | UBCV | Civil and Mechanical Engineering Building (CEME) | Floor: 1 | Room: 1202";
+  const { api } = loadRuntime(
+    courseTable([courseRow("CPSC_V 400-101 - Course", meeting)]),
+  );
+  const record = api.discover().records[0];
+
+  expect(record.meetings[0].location).toEqual({
+    campus: "UBCV",
+    building: "Civil and Mechanical Engineering Building (CEME)",
+    floor: "1",
+    room: "1202",
+    extras: [],
+    label: "Civil and Mechanical Engineering Building (CEME), Floor 1, Room 1202",
+  });
+});
+
+test("renders structured meeting locations in the popup and ICS export", () => {
+  const meeting =
+    "2026-09-09 - 2026-12-07 | Mon Wed Fri | 10:00 a.m. - 11:00 a.m. | UBCV | Civil and Mechanical Engineering Building (CEME) | Floor: 1 | Room: 1202";
+  const event =
+    '<div class="WMSC WKSC WLTC WEUC" style="left:0%;width:14.2857%;top:600px;height:60px;position:absolute"><span>CPSC_V 400-101 - Course</span></div>';
+  const { dom, api } = loadRuntime(
+    courseTable([courseRow("CPSC_V 400-101 - Course", meeting)]) +
+      calendarPopup(event),
+    true,
+  );
+  const context = api.discover();
+  api.state.context = context;
+  api.applyTerm(1);
+
+  context.events[0].element.dispatchEvent(
+    new dom.window.MouseEvent("click", { bubbles: true }),
+  );
+
+  const locationCard = dom.window.document.querySelector(
+    ".ubc-workday-detail-popover-location",
+  );
+  expect(locationCard).not.toBeNull();
+  expect(
+    locationCard.parentElement.nextElementSibling.classList.contains(
+      "ubc-workday-detail-popover-meetings",
+    ),
+  ).toBe(true);
+  expect(
+    locationCard.querySelector(
+      ".ubc-workday-detail-popover-location-building",
+    ).textContent,
+  ).toBe("Civil and Mechanical Engineering Building (CEME)");
+  expect(
+    locationCard.querySelector(
+      ".ubc-workday-detail-popover-location-details",
+    ).textContent,
+  ).toBe("Floor 1 · Room 1202");
+  expect(
+    locationCard.querySelector(
+      ".ubc-workday-detail-popover-location-campus",
+    ).textContent,
+  ).toBe("UBCV");
+  const dateLine = dom.window.document.querySelector(
+    ".ubc-workday-detail-popover-meeting-date",
+  );
+  expect(dateLine.textContent.match(/2026/g)).toHaveLength(1);
+
+  const locations = dom
+    .window.createCalendarString()
+    .match(/^LOCATION:[^\r\n]*/gm);
+  expect(locations).toEqual([
+    "LOCATION:Civil and Mechanical Engineering Building (CEME)\\, Floor 1\\, Room 1202",
+    "LOCATION:Civil and Mechanical Engineering Building (CEME)\\, Floor 1\\, Room 1202",
+    "LOCATION:Civil and Mechanical Engineering Building (CEME)\\, Floor 1\\, Room 1202",
+  ]);
+});
+
+test("omits unavailable location fields and keeps legacy location text", () => {
+  const { api } = loadRuntime(
+    courseTable([
+      courseRow(
+        "CPSC_V 400-101 - Building Only",
+        "2026-09-09 - 2026-12-07 | Wed | 10:00 a.m. - 11:00 a.m. | UBCV | Buchanan Tower",
+      ),
+      courseRow(
+        "CPSC_V 401-101 - Legacy Room",
+        "2026-09-09 - 2026-12-07 | Wed | 11:00 a.m. - 12:00 p.m. | Room 1",
+      ),
+    ]),
+  );
+  const records = api.discover().records;
+
+  expect(records[0].meetings[0].location).toMatchObject({
+    campus: "UBCV",
+    building: "Buchanan Tower",
+    floor: "",
+    room: "",
+    label: "Buchanan Tower",
+  });
+  expect(records[1].meetings[0].location).toMatchObject({
+    building: "",
+    floor: "",
+    room: "1",
+    label: "Room 1",
+  });
+});
+
+test("merges adjacent date ranges with the same schedule and location", () => {
+  const meetings = [
+    "2027-01-05 - 2027-02-11 | Tue Thu | 11:00 a.m. - 12:30 p.m. | UBCV | Buchanan Building (BUCH) | Floor: 1 | Room: A102",
+    "2027-02-23 - 2027-04-08 | Tue Thu | 11:00 a.m. - 12:30 p.m. | UBCV | Buchanan Building (BUCH) | Floor: 1 | Room: A102",
+  ];
+  const event =
+    '<div class="WMSC WKSC WLTC WEUC" style="left:0%;width:14.2857%;top:600px;height:60px;position:absolute"><span>MATH_V 307-202 - Applied Linear Algebra</span></div>';
+  const { dom, api } = loadRuntime(
+    courseTable([
+      courseRowWithMeetingList(
+        "MATH_V 307-202 - Applied Linear Algebra",
+        meetings,
+      ),
+    ]) + calendarPopup(event),
+  );
+  const context = api.discover();
+  api.state.context = context;
+  api.applyTerm(2);
+  context.events[0].element.dispatchEvent(
+    new dom.window.MouseEvent("click", { bubbles: true }),
+  );
+
+  const popup = dom.window.document.querySelector(
+    ".ubc-workday-detail-popover",
+  );
+  expect(popup.querySelectorAll(".ubc-workday-detail-popover-location")).toHaveLength(1);
+  expect(
+    popup.querySelectorAll(
+      ".ubc-workday-detail-popover-meeting-schedule",
+    ),
+  ).toHaveLength(1);
+  expect(
+    popup.querySelectorAll(
+      ".ubc-workday-detail-popover-meeting-date",
+    ),
+  ).toHaveLength(1);
+  const dateText = popup.querySelector(
+    ".ubc-workday-detail-popover-meeting-date",
+  ).textContent;
+  expect(dateText).toContain("·");
+  expect(dateText.match(/2027/g)).toHaveLength(1);
+  expect(
+    popup.querySelector(
+      ".ubc-workday-detail-popover-meeting-date-ranges-header",
+    ),
+  ).toBeNull();
+  expect(
+    popup.querySelectorAll(".ubc-workday-detail-popover-day-strip"),
+  ).toHaveLength(1);
+  expect(
+    popup.querySelectorAll(".ubc-workday-detail-popover-day"),
+  ).toHaveLength(7);
+  expect(
+    popup.querySelectorAll(".ubc-workday-detail-popover-day.is-active"),
+  ).toHaveLength(2);
+  const dayStrip = popup.querySelector(
+    ".ubc-workday-detail-popover-day-strip",
+  );
+  const timeLine = popup.querySelector(
+    ".ubc-workday-detail-popover-meeting-time",
+  );
+  expect(dayStrip.parentElement).toBe(timeLine.parentElement);
+  expect(dayStrip.nextElementSibling).toBe(timeLine);
+  expect(
+    popup.querySelectorAll(".ubc-workday-detail-popover-meeting-time"),
+  ).toHaveLength(1);
+});
+
+test("keeps non-contiguous or changed schedules as separate location groups", () => {
+  const meetings = [
+    "2027-01-05 - 2027-01-29 | Tue Thu | 11:00 a.m. - 12:30 p.m. | UBCV | Buchanan Building (BUCH) | Floor: 1 | Room: A102",
+    "2027-02-02 - 2027-02-26 | Tue Thu | 11:00 a.m. - 12:30 p.m. | UBCV | Civil and Mechanical Engineering Building (CEME) | Floor: 1 | Room: 1202",
+    "2027-03-02 - 2027-04-08 | Tue Thu | 11:00 a.m. - 12:30 p.m. | UBCV | Buchanan Building (BUCH) | Floor: 1 | Room: A102",
+  ];
+  const event =
+    '<div class="WMSC WKSC WLTC WEUC" style="left:0%;width:14.2857%;top:600px;height:60px;position:absolute"><span>MATH_V 307-202 - Applied Linear Algebra</span></div>';
+  const { dom, api } = loadRuntime(
+    courseTable([
+      courseRowWithMeetingList(
+        "MATH_V 307-202 - Applied Linear Algebra",
+        meetings,
+      ),
+    ]) + calendarPopup(event),
+  );
+  const context = api.discover();
+  api.state.context = context;
+  api.applyTerm(2);
+  context.events[0].element.dispatchEvent(
+    new dom.window.MouseEvent("click", { bubbles: true }),
+  );
+
+  const popup = dom.window.document.querySelector(
+    ".ubc-workday-detail-popover",
+  );
+  expect(
+    Array.from(
+      popup.querySelectorAll(
+        ".ubc-workday-detail-popover-location-building",
+      ),
+    ).map((building) => building.textContent),
+  ).toEqual([
+    "Buchanan Building (BUCH)",
+    "Civil and Mechanical Engineering Building (CEME)",
+    "Buchanan Building (BUCH)",
+  ]);
+  expect(
+    popup.querySelectorAll(
+      ".ubc-workday-detail-popover-meeting-schedule",
+    ),
+  ).toHaveLength(3);
+});
+
+test("shares one location across separate time schedules", () => {
+  const meetings = [
+    "2027-01-05 - 2027-02-11 | Tue Thu | 11:00 a.m. - 12:30 p.m. | UBCV | Buchanan Building (BUCH) | Floor: 1 | Room: A102",
+    "2027-02-23 - 2027-04-08 | Tue Thu | 1:00 p.m. - 2:30 p.m. | UBCV | Buchanan Building (BUCH) | Floor: 1 | Room: A102",
+  ];
+  const event =
+    '<div class="WMSC WKSC WLTC WEUC" style="left:0%;width:14.2857%;top:600px;height:60px;position:absolute"><span>MATH_V 307-202 - Applied Linear Algebra</span></div>';
+  const { dom, api } = loadRuntime(
+    courseTable([
+      courseRowWithMeetingList(
+        "MATH_V 307-202 - Applied Linear Algebra",
+        meetings,
+      ),
+    ]) + calendarPopup(event),
+  );
+  const context = api.discover();
+  api.state.context = context;
+  api.applyTerm(2);
+  context.events[0].element.dispatchEvent(
+    new dom.window.MouseEvent("click", { bubbles: true }),
+  );
+
+  const popup = dom.window.document.querySelector(
+    ".ubc-workday-detail-popover",
+  );
+  expect(popup.querySelectorAll(".ubc-workday-detail-popover-location")).toHaveLength(1);
+  expect(
+    popup.querySelectorAll(
+      ".ubc-workday-detail-popover-meeting-schedule",
+    ),
+  ).toHaveLength(2);
+  expect(
+    popup.querySelectorAll(".ubc-workday-detail-popover-meeting-time"),
+  ).toHaveLength(2);
 });
 
 test("does not export hidden waitlisted courses by default", () => {

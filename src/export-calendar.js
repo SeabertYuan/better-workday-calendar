@@ -92,7 +92,21 @@ function formatCalendarTime(minutes) {
 }
 
 function getCalendarLocation(meeting) {
-  return String(meeting.text || "").split("|")[3]?.trim() || "";
+  const location = meeting && meeting.location;
+  if (location && typeof location === "object") {
+    return String(location.label || "").trim();
+  }
+  if (typeof location === "string") return location.trim();
+
+  const parts = String((meeting && meeting.text) || "")
+    .split("|")
+    .slice(3)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (typeof workdayCalendarAPI?.parseLocationParts === "function") {
+    return workdayCalendarAPI.parseLocationParts(parts).label || "";
+  }
+  return parts[0] || "";
 }
 
 function escapeIcsText(value) {

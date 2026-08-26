@@ -355,6 +355,26 @@
         padding-top: 10px;
       }
 
+      .ubc-workday-detail-popover-meeting-schedule.is-separated {
+        margin-top: 10px;
+        border-top: 1px solid #edf0f3;
+        padding-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-groups {
+        margin-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-group +
+        .ubc-workday-detail-popover-meeting-group {
+        margin-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-group
+        > .ubc-workday-detail-popover-location {
+        margin-top: 0;
+      }
+
       .ubc-workday-detail-popover-meeting {
         padding: 5px 0;
       }
@@ -371,11 +391,12 @@
 
       .ubc-workday-detail-popover-meeting-date {
         font-weight: 600;
+        overflow-wrap: anywhere;
       }
 
       .ubc-workday-detail-popover-day-strip {
         display: flex;
-        gap: 4px;
+        gap: 3px;
         margin-top: 6px;
       }
 
@@ -384,13 +405,13 @@
         place-items: center;
         flex: 1 1 0;
         min-width: 0;
-        height: 24px;
+        height: 20px;
         box-sizing: border-box;
-        border: 1px solid #d5dce3;
-        border-radius: 5px;
-        background: #f5f7f9;
-        color: #75818d;
-        font-size: 10px;
+        border: 1px solid #e4e8ec;
+        border-radius: 4px;
+        background: #fafbfc;
+        color: #89939d;
+        font-size: 9px;
         font-weight: 600;
       }
 
@@ -401,14 +422,89 @@
       }
 
       .ubc-workday-detail-popover-meeting-time {
-        margin-top: 6px;
-        color: #344656;
+        margin-top: 4px;
+        color: #25313d;
+        font-size: 13px;
         font-weight: 600;
+        white-space: nowrap;
       }
 
-      .ubc-workday-detail-popover-meeting-location {
-        margin-top: 2px;
-        color: #5b6773;
+      .ubc-workday-detail-popover-location {
+        margin-top: 8px;
+        border: 1px solid #dbe2e8;
+        border-radius: 7px;
+        background: #f7f9fb;
+        padding: 8px 9px;
+      }
+
+      .ubc-workday-detail-popover-location-heading {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #4a5a68;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .ubc-workday-detail-popover-location-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--workday-course-color) 28%, #ffffff);
+        color: #38536a;
+      }
+
+      .ubc-workday-detail-popover-location-icon svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .ubc-workday-detail-popover-location-campus {
+        margin-left: auto;
+        border: 1px solid #d5dce3;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #66727d;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0;
+        padding: 2px 6px;
+      }
+
+      .ubc-workday-detail-popover-location-building {
+        margin-top: 5px;
+        color: #25313d;
+        font-weight: 600;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-location-details {
+        margin-top: 6px;
+        color: #4a5a68;
+        font-size: 12px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-locations {
+        margin-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-locations
+        .ubc-workday-detail-popover-location {
+        margin-top: 0;
+      }
+
+      .ubc-workday-detail-popover-locations
+        .ubc-workday-detail-popover-location
+        + .ubc-workday-detail-popover-location {
+        margin-top: 6px;
       }
     `;
   }
@@ -1203,13 +1299,18 @@
     return toolbar;
   }
 
-  function formatDetailDate(value) {
-    if (!(value instanceof Date) || Number.isNaN(value.getTime())) return "";
-    return new Intl.DateTimeFormat(undefined, {
+  function isValidDetailDate(value) {
+    return value instanceof Date && !Number.isNaN(value.getTime());
+  }
+
+  function formatDetailDate(value, includeYear = true) {
+    if (!isValidDetailDate(value)) return "";
+    const options = {
       month: "short",
       day: "numeric",
-      year: "numeric",
-    }).format(value);
+    };
+    if (includeYear) options.year = "numeric";
+    return new Intl.DateTimeFormat(undefined, options).format(value);
   }
 
   function formatDetailTime(minutes) {
@@ -1221,24 +1322,251 @@
     return `${hour12}:${String(total % 60).padStart(2, "0")} ${meridiem}`;
   }
 
-  function formatDetailMeetingDate(meeting) {
-    const start = formatDetailDate(meeting.startDate);
-    const end = formatDetailDate(meeting.endDate || meeting.startDate);
-    if (!start) return "";
-    return end && end !== start ? `${start} – ${end}` : start;
+  function formatDetailMeetingDate(meeting, sharedYear = null) {
+    const startDate = meeting && meeting.startDate;
+    const endDate = meeting && (meeting.endDate || meeting.startDate);
+    if (!isValidDetailDate(startDate)) return "";
+
+    const sameDate =
+      isValidDetailDate(endDate) &&
+      startDate.getTime() === endDate.getTime();
+    const sameYear =
+      isValidDetailDate(endDate) &&
+      startDate.getFullYear() === endDate.getFullYear();
+    const omitYear =
+      Number.isInteger(sharedYear) &&
+      sameYear &&
+      startDate.getFullYear() === sharedYear;
+
+    if (sameDate || !isValidDetailDate(endDate)) {
+      return formatDetailDate(startDate, !omitYear);
+    }
+
+    if (sameYear) {
+      const start = formatDetailDate(startDate, false);
+      const endDay = new Intl.DateTimeFormat(undefined, {
+        day: "numeric",
+      }).format(endDate);
+      const end =
+        startDate.getMonth() === endDate.getMonth()
+          ? endDay
+          : formatDetailDate(endDate, false);
+      const range =
+        startDate.getMonth() === endDate.getMonth()
+          ? `${start}–${end}`
+          : `${start} – ${end}`;
+      return omitYear ? range : `${range}, ${startDate.getFullYear()}`;
+    }
+
+    return `${formatDetailDate(startDate)} – ${formatDetailDate(endDate)}`;
   }
 
-  function formatDetailLocation(meeting) {
-    const parts = normaliseText(meeting.text || "")
+  function getMeetingLocation(meeting) {
+    if (meeting && meeting.location && typeof meeting.location === "object") {
+      return meeting.location;
+    }
+
+    const parts = normaliseText(meeting && meeting.text ? meeting.text : "")
       .split("|")
-      .map((part) => part.trim());
-    if (parts.length <= 3) return "";
-    return normaliseText(
-      parts[3]
-        .replace(/\bUBCV\b/gi, "")
-        .replace(/^\s*[-–—:,|]\s*/, "")
-        .replace(/\s*[-–—:,|]\s*$/, ""),
+      .slice(3)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (typeof API.parseLocationParts === "function") {
+      return API.parseLocationParts(parts);
+    }
+    return {
+      campus: "",
+      building: parts[0] || "",
+      floor: "",
+      room: "",
+      extras: parts.slice(1),
+      label: parts.join(", "),
+    };
+  }
+
+  function hasMeetingLocation(location) {
+    return Boolean(
+      location &&
+        (location.campus ||
+          location.building ||
+          location.floor ||
+          location.room ||
+          (Array.isArray(location.extras) && location.extras.length)),
     );
+  }
+
+  function createLocationIcon() {
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const icon = document.createElementNS(svgNamespace, "svg");
+    icon.setAttribute("aria-hidden", "true");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("fill", "none");
+    icon.setAttribute("stroke", "currentColor");
+    icon.setAttribute("stroke-linecap", "round");
+    icon.setAttribute("stroke-linejoin", "round");
+    icon.setAttribute("stroke-width", "1.8");
+
+    const pin = document.createElementNS(svgNamespace, "path");
+    pin.setAttribute(
+      "d",
+      "M12 21s7-5.4 7-12a7 7 0 1 0-14 0c0 6.6 7 12 7 12Z",
+    );
+    const center = document.createElementNS(svgNamespace, "circle");
+    center.setAttribute("cx", "12");
+    center.setAttribute("cy", "9");
+    center.setAttribute("r", "2.3");
+    icon.append(pin, center);
+    return icon;
+  }
+
+  function appendLocationCard(parent, location) {
+    if (!hasMeetingLocation(location)) return;
+
+    const card = document.createElement("div");
+    card.className = "ubc-workday-detail-popover-location";
+
+    const heading = document.createElement("div");
+    heading.className = "ubc-workday-detail-popover-location-heading";
+    const icon = document.createElement("span");
+    icon.className = "ubc-workday-detail-popover-location-icon";
+    icon.appendChild(createLocationIcon());
+    const label = document.createElement("span");
+    label.textContent = "Location";
+    heading.append(icon, label);
+
+    if (location.campus) {
+      const campus = document.createElement("span");
+      campus.className = "ubc-workday-detail-popover-location-campus";
+      campus.textContent = location.campus;
+      heading.appendChild(campus);
+    }
+    card.appendChild(heading);
+
+    if (location.building) {
+      const building = document.createElement("div");
+      building.className = "ubc-workday-detail-popover-location-building";
+      building.textContent = location.building;
+      card.appendChild(building);
+    }
+
+    const detailValues = [
+      location.floor ? `Floor ${location.floor}` : "",
+      location.room ? `Room ${location.room}` : "",
+      ...(Array.isArray(location.extras) ? location.extras : []),
+    ].filter(Boolean);
+    if (detailValues.length) {
+      const details = document.createElement("div");
+      details.className = "ubc-workday-detail-popover-location-details";
+      details.textContent = detailValues.join(" · ");
+      card.appendChild(details);
+    }
+    parent.appendChild(card);
+  }
+
+  function locationSignature(location) {
+    if (!location) return "";
+    return [
+      location.campus || "",
+      location.building || "",
+      location.floor || "",
+      location.room || "",
+      location.label || "",
+      ...(Array.isArray(location.extras) ? location.extras : []),
+    ]
+      .map((value) => normaliseText(value))
+      .join("\u001f");
+  }
+
+  function meetingScheduleSignature(meeting) {
+    const days = Array.from(new Set(meeting.meetingDays || []))
+      .filter((day) => Number.isFinite(day))
+      .sort((left, right) => left - right)
+      .join(",");
+    return [
+      days,
+      Number.isFinite(meeting.startMinutes) ? meeting.startMinutes : "",
+      Number.isFinite(meeting.endMinutes) ? meeting.endMinutes : "",
+      locationSignature(getMeetingLocation(meeting)),
+    ].join("|");
+  }
+
+  function groupMeetings(meetings) {
+    const groups = [];
+    let current = null;
+    meetings.forEach((meeting) => {
+      const key = meetingScheduleSignature(meeting);
+      if (!current || current.key !== key) {
+        current = { key, meetings: [] };
+        groups.push(current);
+      }
+      current.meetings.push(meeting);
+    });
+    return groups;
+  }
+
+  function sharedMeetingDateYear(meetings) {
+    const years = new Set();
+    meetings.forEach((meeting) => {
+      [meeting.startDate, meeting.endDate || meeting.startDate].forEach(
+        (date) => {
+          if (isValidDetailDate(date)) years.add(date.getFullYear());
+        },
+      );
+    });
+    return years.size === 1 ? Array.from(years)[0] : null;
+  }
+
+  function appendMeetingDateLine(parent, date, extraClass = "") {
+    const dateLine = document.createElement("div");
+    dateLine.className = [
+      "ubc-workday-detail-popover-meeting-line",
+      "ubc-workday-detail-popover-meeting-date",
+      extraClass,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    dateLine.textContent = date;
+    parent.appendChild(dateLine);
+  }
+
+  function appendMeetingSchedule(parent, group, separated = false) {
+    const schedule = document.createElement("div");
+    schedule.className = "ubc-workday-detail-popover-meeting-schedule";
+    if (separated) schedule.classList.add("is-separated");
+
+    const sharedYear =
+      group.meetings.length > 1
+        ? sharedMeetingDateYear(group.meetings)
+        : null;
+    const dateValues = group.meetings
+      .map((meeting) => formatDetailMeetingDate(meeting, sharedYear))
+      .filter(Boolean);
+    if (dateValues.length) {
+      const dateText = dateValues.join(" · ");
+      appendMeetingDateLine(
+        schedule,
+        sharedYear !== null ? `${dateText}, ${sharedYear}` : dateText,
+      );
+    }
+
+    const representative = group.meetings[0];
+    if (representative.meetingDays && representative.meetingDays.length) {
+      appendMeetingDayStrip(schedule, representative);
+    }
+    const time = [
+      formatDetailTime(representative.startMinutes),
+      formatDetailTime(representative.endMinutes),
+    ]
+      .filter(Boolean)
+      .join(" – ");
+    if (time) {
+      const timeLine = document.createElement("div");
+      timeLine.className =
+        "ubc-workday-detail-popover-meeting-line ubc-workday-detail-popover-meeting-time";
+      timeLine.textContent = time;
+      schedule.appendChild(timeLine);
+    }
+    parent.appendChild(schedule);
   }
 
   function appendMeetingDayStrip(parent, meeting) {
@@ -1376,46 +1704,44 @@
         ? [record]
         : [];
     if (meetings.length) {
-      const meetingsList = document.createElement("div");
-      meetingsList.className = "ubc-workday-detail-popover-meetings";
-      meetings.forEach((meeting) => {
-        const meetingCard = document.createElement("div");
-        meetingCard.className = "ubc-workday-detail-popover-meeting";
-        const date = formatDetailMeetingDate(meeting);
-        const time = [
-          formatDetailTime(meeting.startMinutes),
-          formatDetailTime(meeting.endMinutes),
-        ]
-          .filter(Boolean)
-          .join(" – ");
-        const location = formatDetailLocation(meeting);
-        if (date) {
-          const dateLine = document.createElement("div");
-          dateLine.className =
-            "ubc-workday-detail-popover-meeting-line ubc-workday-detail-popover-meeting-date";
-          dateLine.textContent = date;
-          meetingCard.appendChild(dateLine);
+      const groups = groupMeetings(meetings);
+      const locationKeys = new Set(
+        groups.map((group) =>
+          locationSignature(getMeetingLocation(group.meetings[0])),
+        ),
+      );
+
+      if (locationKeys.size === 1) {
+        const sharedLocation = getMeetingLocation(groups[0].meetings[0]);
+        if (hasMeetingLocation(sharedLocation)) {
+          const locationsList = document.createElement("div");
+          locationsList.className = "ubc-workday-detail-popover-locations";
+          appendLocationCard(locationsList, sharedLocation);
+          body.appendChild(locationsList);
         }
-        if (meeting.meetingDays && meeting.meetingDays.length) {
-          appendMeetingDayStrip(meetingCard, meeting);
-        }
-        if (time) {
-          const timeLine = document.createElement("div");
-          timeLine.className =
-            "ubc-workday-detail-popover-meeting-line ubc-workday-detail-popover-meeting-time";
-          timeLine.textContent = time;
-          meetingCard.appendChild(timeLine);
-        }
-        if (location) {
-          const locationLine = document.createElement("div");
-          locationLine.className =
-            "ubc-workday-detail-popover-meeting-line ubc-workday-detail-popover-meeting-location";
-          locationLine.textContent = location;
-          meetingCard.appendChild(locationLine);
-        }
-        meetingsList.appendChild(meetingCard);
-      });
-      body.appendChild(meetingsList);
+
+        const meetingsList = document.createElement("div");
+        meetingsList.className = "ubc-workday-detail-popover-meetings";
+        groups.forEach((group, index) =>
+          appendMeetingSchedule(meetingsList, group, index > 0),
+        );
+        body.appendChild(meetingsList);
+      } else {
+        const groupsList = document.createElement("div");
+        groupsList.className =
+          "ubc-workday-detail-popover-meeting-groups";
+        groups.forEach((group) => {
+          const groupElement = document.createElement("div");
+          groupElement.className =
+            "ubc-workday-detail-popover-meeting-group";
+          const location = getMeetingLocation(group.meetings[0]);
+          appendLocationCard(groupElement, location);
+          appendMeetingSchedule(groupElement, group, true);
+          groupsList.appendChild(groupElement);
+        });
+        body.appendChild(groupsList);
+      }
+
     }
     popover.append(header, body);
     const surface = API.state.context && API.state.context.surface;
