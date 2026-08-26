@@ -1,0 +1,27 @@
+{
+  "name": "Better Workday Calendar",
+  "version": "3.1.0",
+  "description": "A browser extension that allows you to use the UBC Workday calendar term by term.",
+  "homepage_url": "https://github.com/SeabertYuan/better-workday-calendar",
+  "manifest_version": 3,
+  "icons": {
+    "16": "icons/bwc_logo16.png",
+    "32": "icons/bwc_logo32.png",
+    "48": "icons/bwc_logo48.png",
+    "128": "icons/bwc_logo128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.myworkday.com/ubc/d/*"
+      ],
+      "js": [
+        "src/index.js",
+        "src/draw-calendar.js",
+        "src/export-calendar.js",
+        "src/main.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ const coursesToShow = new Set();
 // check if the table is loaded
 function isTablesLoaded() {
   let tables = document.getElementsByTagName("table");
-  return doTablesExist(tables);
+  return DoTablesExist(tables);
 }
 
 // wait for the course tables and return it
@@ -57,7 +57,7 @@ function tagCourses() {
     for (let j = 2; j < courseRows.length; j++) {
       let elemTerm = getCourseTerm(courseRows[j]);
       let courseName = courseRows[j].childNodes[4].innerText.slice(0, 14);
-      addCourseIfTermMatches(elemTerm, courseName, TERM, coursesToShow);
+      addCourseIfTermMatches(elemTerm, courseName);
     }
   }
 }
@@ -70,7 +70,7 @@ function filterCourses() {
 // ---------------------- Logics (Testable) ----------------------
 
 // check if the tables exist
-function doTablesExist(tables) {
+function DoTablesExist(tables) {
   return !!tables ? tables.length > 1 : false;
 }
 
@@ -92,20 +92,9 @@ function calculateCourseTerm(startMonth, endMonth) {
   return term;
 }
 
-function addCourseIfTermMatches(elemTerm, courseName, TERM, setOfCoursesToShow) {
+function addCourseIfTermMatches(elemTerm, courseName) {
   if (TERM == 0 || TERM == elemTerm || elemTerm == 3) {
-    setOfCoursesToShow.add(courseName);
+    coursesToShow.add(courseName);
   }
 }
 
-
-const exportedFunctions_filtercourses = {
-  doTablesExist,
-  calculateCourseTerm,
-  addCourseIfTermMatches,
-};
-
-// If in development (Node.js) environment
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = exportedFunctions_filtercourses;
-}

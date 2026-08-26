@@ -54,60 +54,42 @@ function parseCourseInfo() {
 }
 
 function getCourseName(courseRow) {
-  return courseRow.childNodes[4].innerText.slice(0, 14);
+  const courseCell = courseRow.cells?.[4] || courseRow.childNodes?.[4];
+  const text = courseCell?.innerText || courseCell?.textContent || "";
+  return text.trim().slice(0, 14);
 }
+
 
 // ---------------------- Logics (Testable) ----------------------
 
 // gets the actual start date which is:
-// 1. later than the start date listed on the course table
+// 1. later than or equal to the start date listed on the course table
 // 2. on dayOfWeek
 function getActualStartDate(startDay, dayOfWeek) {
-  let startDateVals = startDay.split("-");
-  let startDayOfWeek = getDayOfWeek(
-    Number(startDateVals[0]),
-    Number(startDateVals[1]),
-    Number(startDateVals[2]),
-  );
+  let startDate = new Date(startDay);
+  let startDayOfWeek = startDate.getDay();
   let dif = (dayOfWeekToNum.get(dayOfWeek) - startDayOfWeek + 7) % 7;
-  startDateVals[2] = (Number(startDateVals[2]) + dif).toString();
-  return `${startDateVals[0]}-${startDateVals[1]}-${startDateVals[2].padStart(2, "0")}`;
-}
-
-// Formula obtained from https://cs.uwaterloo.ca/~alopez-o/math-faq/node73.html#:~:text=For%20a%20Gregorian%20date%2C%20add,7%20and%20take%20the%20remainder.
-// input: int year, int month, int day
-// output: int, 0 is Sunday → 6 is Saturday
-function getDayOfWeek(year, month, day) {
-  // treat Jan and Feb as months of the preceding year
-  if (month == 1 || month == 2) year -= 1;
-  const k = day;
-  const m = ((month + 9) % 12) + 1;
-  const C = Math.floor(year / 100);
-  const Y = year % 100;
-  const W =
-    (k +
-      Math.floor(2.6 * m - 0.2) -
-      2 * C +
-      Y +
-      Math.floor(Y / 4) +
-      Math.floor(C / 4)) %
-    7;
-  return (W + 7) % 7;
+  startDate.setDate(startDate.getDate() + dif);
+  return formatDate(startDate);
 }
 
 // gets the actual end date which is:
-// 1. earlier than the end date listed on the course table
+// 1. earlier than or equal to the end date listed on the course table
 // 2. on dayOfWeek
 function getActualEndDate(endDay, dayOfWeek) {
-  let endDateVals = endDay.split("-");
-  let endDayOfWeek = getDayOfWeek(
-    Number(endDateVals[0]),
-    Number(endDateVals[1]),
-    Number(endDateVals[2]),
-  );
+  let endDate = new Date(endDay);
+  let endDayOfWeek = endDate.getDay();
   let dif = (endDayOfWeek - dayOfWeekToNum.get(dayOfWeek) + 7) % 7;
-  endDateVals[2] = (Number(endDateVals[2]) - dif).toString();
-  return `${endDateVals[0]}-${endDateVals[1]}-${endDateVals[2].padStart(2, "0")}`;
+  endDate.setDate(endDate.getDate() - dif);
+  return formatDate(endDate);
+}
+
+// formats the Data object to "yyyy-mm-dd" format
+function formatDate(date) {
+  let year = date.getFullYear();
+  let month = String(date.getMonth() + 1).padStart(2, "0");
+  let day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getStartDay(block) {
@@ -124,14 +106,7 @@ function getEndDay(block) {
 
 function getDaysOfWeek(block) {
   let day_section = block.split("|")[1].trim();
-  let days = Array.from(day_section.split(" "));
-  return handleExceptionalDays(days);
-}
-
-function handleExceptionalDays(days) {
-  for (let i = days.length; i >= 0; i--) {
-    if (!dayOfWeekToNum.has(days[i])) days.splice(i, 1);
-  }
+  let days = day_section.split(" ");
   return days;
 }
 
@@ -144,16 +119,7 @@ function isAm(timeSection) {
 }
 
 // converts to 24-hour clock if needed
-// input: ([1-12] [a.m.|p.m.]) or 24-hour-clock
 function parseTime(time) {
-  let timeNum = time.split(" ")[0].trim();
-  if ((!isAm(time) && parseInt(timeNum.split(":")[0]) < 12) || (isAm(time) && parseInt(timeNum.split(":")[0]) == 12)) {
-    timeNum = `${(parseInt(timeNum.split(":")[0]) + 12) % 24}:${timeNum.split(":")[1].trim()}`
-  }
-  return ("0" + timeNum).slice(-5);
-}
-
-function parseTime_prev(time) {
   let timeNum = time.split(" ")[0].trim();
   if (isAm(time) || parseInt(timeNum.split(":")[0]) >= 12) {
     return ("0" + timeNum).slice(-5);
@@ -177,25 +143,7 @@ function getLocation(block) {
   return loc_section;
 }
 
-
-const exportedFunctions_parsecourses = {
-  getActualStartDate,
-  getActualEndDate,
-  getDayOfWeek,
-  getStartDay,
-  getEndDay,
-  getDaysOfWeek,
-  handleExceptionalDays,
-  getTimeSection,
-  isAm,
-  parseTime,
-  getStartTime,
-  getEndTime,
-  getLocation,
-};
-
-// If in development (Node.js) environment
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = exportedFunctions_parsecourses;
+// Keep the legacy parser testable in Node without changing its browser behaviour.
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { getCourseName };
 }
-  

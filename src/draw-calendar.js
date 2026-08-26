@@ -1,277 +1,1859 @@
-// Codes relating to calendar UI
+(function installWorkdayTermCalendarDrawing(global) {
+  const API = global.__UBC_WORKDAY_TERM_CALENDAR__;
+  if (!API || API.__drawingInstalled) return;
+  API.__drawingInstalled = true;
 
-// variables
-let courseElements;
-const WIDTH = 14.2857;
+  const STYLE_ID = "ubc-workday-term-calendar-styles";
+  const TOOLBAR_SELECTOR = '[data-workday-term-calendar-toolbar="true"]';
+  const EXPORT_ROW_SELECTOR = '[data-workday-term-calendar-export-row="true"]';
+  const TITLEBAR_SELECTOR = '[data-workday-term-calendar-titlebar="true"]';
+  const EVENT_SELECTOR = '[data-workday-term-calendar-event="true"]';
+  const DAY_WIDTH = API.DAY_WIDTH;
+  const PALETTE = [
+    "#A8C7FA",
+    "#F3B6C2",
+    "#B7D9B1",
+    "#F4D39A",
+    "#C9B8E8",
+    "#9FD4D0",
+    "#F2B98F",
+    "#B7C6D9",
+    "#D6C58E",
+    "#C4B3A5",
+    "#AFC8B8",
+    "#D7B7D9",
+    "#F0B7A4",
+    "#BFD3F2",
+    "#D7E8A8",
+    "#F6C4D8",
+    "#B8E0D2",
+    "#E4C1F9",
+    "#F9E2AE",
+    "#C7CEEA",
+  ];
+  const PALETTE_RGB = PALETTE.map((hex) => ({
+    red: Number.parseInt(hex.slice(1, 3), 16),
+    green: Number.parseInt(hex.slice(3, 5), 16),
+    blue: Number.parseInt(hex.slice(5, 7), 16),
+  }));
+  const GEOMETRY_BOUNDARY_TOLERANCE_PX = 2;
 
+  function normaliseText(value) {
+    return String(value || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/[ \t\r\f]+/g, " ")
+      .replace(/\n+/g, "\n")
+      .trim();
+  }
 
-// ---------------------- Course Display ----------------------
+  function compactKey(value) {
+    return normaliseText(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  }
 
-function hideElement(element) {
-  element.style.display = "none";
-}
+  function addStyles() {
+    let style = document.getElementById(STYLE_ID);
+    if (!style) {
+      style = document.createElement("style");
+      style.id = STYLE_ID;
+      document.head && document.head.appendChild(style);
+    }
+    if (!style) return;
+    style.textContent = `
+      ${TITLEBAR_SELECTOR} {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+      }
 
-function showElement(element) {
-  element.style.display = "block";
-}
+      ${TOOLBAR_SELECTOR} {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        flex: 0 1 auto;
+        min-width: 0;
+        width: auto;
+        margin-left: auto;
+        gap: 0;
+        align-items: center;
+        align-self: center;
+        box-sizing: border-box;
+        padding: 0 8px;
+        white-space: nowrap;
+        position: relative;
+        z-index: 2;
+        pointer-events: auto !important;
+      }
 
-//displays tagged elements on calendar page
-function displayElements() {
-  for (const course of courseElements) {
-    let courseName = course.innerText.slice(0, 14);
-    if (coursesToShow.has(courseName)) {
-      showElement(course);
+      ${TOOLBAR_SELECTOR} .ubc-workday-toolbar-group {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 6px;
+      }
+
+      ${TOOLBAR_SELECTOR} .ubc-workday-waitlisted-group {
+        margin-left: 12px;
+      }
+
+      ${EXPORT_ROW_SELECTOR} {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        box-sizing: border-box;
+        width: 100%;
+        padding: 6px 16px;
+        background: #f7f8fa;
+        border-top: 1px solid #e1e4e8;
+        margin: 0 !important;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        pointer-events: auto !important;
+      }
+
+      ${TOOLBAR_SELECTOR} ~ [class*="IconsContainer"] {
+        flex: 0 0 auto;
+        margin-left: 0 !important;
+        margin-inline-start: 0 !important;
+      }
+
+      ${TOOLBAR_SELECTOR} button,
+      ${EXPORT_ROW_SELECTOR} button {
+        appearance: none;
+        border: 1px solid #c9ced6;
+        border-radius: 5px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        line-height: 1.2;
+        min-height: 28px;
+        padding: 5px 10px;
+        position: relative;
+        z-index: 3;
+        pointer-events: auto !important;
+        transition: background-color 120ms ease, border-color 120ms ease;
+      }
+
+      ${TOOLBAR_SELECTOR} .ubc-workday-term-button {
+        background: #f3f5f7;
+        color: #27313d;
+      }
+
+      ${TOOLBAR_SELECTOR} .ubc-workday-term-button[aria-pressed="true"] {
+        background: #418ccf;
+        border-color: #2d73b1;
+        color: #fff;
+      }
+
+      ${TOOLBAR_SELECTOR} .ubc-workday-waitlisted-button {
+        background: #fff3c4;
+        border-color: #e1be53;
+        color: #6c4c00;
+      }
+
+      ${TOOLBAR_SELECTOR} .ubc-workday-waitlisted-button[aria-pressed="true"] {
+        background: #c78908;
+        border-color: #a76f00;
+        color: #fff;
+      }
+
+      ${EXPORT_ROW_SELECTOR} .ubc-workday-export-button {
+        background: #e3f2e5;
+        border-color: #8fb898;
+        color: #285d32;
+        font-weight: 600;
+      }
+
+      ${EXPORT_ROW_SELECTOR} .ubc-workday-export-icon {
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        vertical-align: -2px;
+      }
+
+      ${TOOLBAR_SELECTOR} button:hover,
+      ${EXPORT_ROW_SELECTOR} button:hover {
+        filter: brightness(0.97);
+      }
+
+      ${EVENT_SELECTOR} {
+        --workday-course-color: #dce5ef;
+        background-color: var(--workday-course-color) !important;
+        border: 1px solid color-mix(in srgb, var(--workday-course-color) 62%, #4b5563) !important;
+        border-radius: 5px !important;
+        box-sizing: border-box !important;
+        cursor: pointer;
+        overflow: hidden !important;
+        pointer-events: auto !important;
+      }
+
+      ${EVENT_SELECTOR} > :not(.ubc-workday-event-summary) {
+        visibility: hidden !important;
+      }
+
+      ${EVENT_SELECTOR}[data-workday-registration-status="waitlisted"] {
+        background-color: color-mix(in srgb, var(--workday-course-color) 58%, #ffffff) !important;
+        background-image: none !important;
+        border-color: color-mix(in srgb, var(--workday-course-color) 62%, #4b5563) !important;
+        border-radius: 5px !important;
+        border-width: 2px !important;
+        border-style: dashed !important;
+      }
+
+      ${EVENT_SELECTOR} .ubc-workday-event-summary {
+        position: absolute;
+        inset: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+        padding: 4px 5px;
+        color: #24303b;
+        font-size: 11px;
+        line-height: 1.18;
+        pointer-events: none;
+        text-align: left;
+        z-index: 2;
+      }
+
+      ${EVENT_SELECTOR} .ubc-workday-event-code {
+        display: block;
+        max-width: calc(100% - 2px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 700;
+      }
+
+      ${EVENT_SELECTOR} .ubc-workday-event-description {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        max-height: 2.36em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: break-word;
+      }
+
+      ${EVENT_SELECTOR} .ubc-workday-wl-badge {
+        position: absolute;
+        right: 3px;
+        top: 3px;
+        border: 1px solid rgba(108, 76, 0, 0.5);
+        border-radius: 3px;
+        background: rgba(255, 247, 208, 0.92);
+        color: #6c4c00;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 1;
+        padding: 2px 3px;
+      }
+
+      .ubc-workday-detail-popover {
+        position: fixed;
+        z-index: 2147483000;
+        width: min(340px, calc(100vw - 24px));
+        max-width: 340px;
+        max-height: calc(100vh - 24px);
+        overflow: hidden;
+        box-sizing: border-box;
+        border: 1px solid #aab5c2;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 8px 28px rgba(24, 39, 58, 0.24);
+        color: #25313d;
+        font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .ubc-workday-detail-popover-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 12px 8px;
+        border-bottom: 1px solid #e1e5ea;
+      }
+
+      .ubc-workday-detail-popover-title {
+        flex: 1;
+        min-width: 0;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-close {
+        flex: 0 0 auto;
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: #5b6773;
+        cursor: pointer;
+        font-size: 19px;
+        line-height: 1;
+        padding: 0 3px;
+      }
+
+      .ubc-workday-detail-popover-body {
+        max-height: calc(100vh - 78px);
+        overflow: auto;
+        padding: 10px 12px 12px;
+      }
+
+      .ubc-workday-detail-popover-status {
+        display: inline-block;
+        margin: 0;
+        border-radius: 999px;
+        background: #edf1f5;
+        color: #465360;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 7px;
+      }
+
+      .ubc-workday-detail-popover-status[data-status="waitlisted"] {
+        background: #fff1bf;
+        color: #6c4c00;
+      }
+
+      .ubc-workday-detail-popover-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 4px;
+        margin-bottom: 4px;
+      }
+
+      .ubc-workday-detail-popover-term {
+        display: inline-block;
+        border: 1px solid color-mix(in srgb, var(--workday-course-color) 45%, #b8c2cc);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--workday-course-color) 22%, #ffffff);
+        color: #38536a;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 7px;
+      }
+
+      .ubc-workday-detail-popover-field {
+        margin-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-label {
+        margin-top: 8px;
+        color: #66727d;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .ubc-workday-detail-popover-value {
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-meetings {
+        margin-top: 14px;
+        border-top: 1px solid #e1e5ea;
+        padding-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-schedule.is-separated {
+        margin-top: 10px;
+        border-top: 1px solid #edf0f3;
+        padding-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-groups {
+        margin-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-group +
+        .ubc-workday-detail-popover-meeting-group {
+        margin-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-group
+        > .ubc-workday-detail-popover-location {
+        margin-top: 0;
+      }
+
+      .ubc-workday-detail-popover-meeting {
+        padding: 5px 0;
+      }
+
+      .ubc-workday-detail-popover-meeting + .ubc-workday-detail-popover-meeting {
+        margin-top: 6px;
+        border-top: 1px solid #edf0f3;
+        padding-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-meeting-line {
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-meeting-date {
+        font-weight: 600;
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-day-strip {
+        display: flex;
+        gap: 3px;
+        margin-top: 6px;
+      }
+
+      .ubc-workday-detail-popover-day {
+        display: grid;
+        place-items: center;
+        flex: 1 1 0;
+        min-width: 0;
+        height: 20px;
+        box-sizing: border-box;
+        border: 1px solid #e4e8ec;
+        border-radius: 4px;
+        background: #fafbfc;
+        color: #89939d;
+        font-size: 9px;
+        font-weight: 600;
+      }
+
+      .ubc-workday-detail-popover-day.is-active {
+        border-color: color-mix(in srgb, var(--workday-course-color) 65%, #7f8b97);
+        background: color-mix(in srgb, var(--workday-course-color) 35%, #ffffff);
+        color: #25313d;
+      }
+
+      .ubc-workday-detail-popover-meeting-time {
+        margin-top: 4px;
+        color: #25313d;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .ubc-workday-detail-popover-location {
+        margin-top: 8px;
+        border: 1px solid #dbe2e8;
+        border-radius: 7px;
+        background: #f7f9fb;
+        padding: 8px 9px;
+      }
+
+      .ubc-workday-detail-popover-location-heading {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #4a5a68;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .ubc-workday-detail-popover-location-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--workday-course-color) 28%, #ffffff);
+        color: #38536a;
+      }
+
+      .ubc-workday-detail-popover-location-icon svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .ubc-workday-detail-popover-location-campus {
+        margin-left: auto;
+        border: 1px solid #d5dce3;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #66727d;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0;
+        padding: 2px 6px;
+      }
+
+      .ubc-workday-detail-popover-location-building {
+        margin-top: 5px;
+        color: #25313d;
+        font-weight: 600;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-location-details {
+        margin-top: 6px;
+        color: #4a5a68;
+        font-size: 12px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+      }
+
+      .ubc-workday-detail-popover-locations {
+        margin-top: 10px;
+      }
+
+      .ubc-workday-detail-popover-locations
+        .ubc-workday-detail-popover-location {
+        margin-top: 0;
+      }
+
+      .ubc-workday-detail-popover-locations
+        .ubc-workday-detail-popover-location
+        + .ubc-workday-detail-popover-location {
+        margin-top: 6px;
+      }
+    `;
+  }
+
+  function restoreElement(element) {
+    const position = API.state.originalPositions.get(element);
+    const display = API.state.originalDisplays.get(element);
+    if (position) {
+      element.style.left = position.inline.left;
+      element.style.width = position.inline.width;
+      element.style.top = position.inline.top;
+      element.style.height = position.inline.height;
+    }
+    if (display !== undefined) element.style.display = display;
+  }
+
+  function restoreAttribute(element, name, value) {
+    if (value === null || value === undefined) {
+      element.removeAttribute(name);
     } else {
-      hideElement(course);
+      element.setAttribute(name, value);
     }
   }
-}
 
-function resetCalendar() {
-  for (const course of courseElements) {
-    showElement(course);
-  }
-}
+  function restoreManagedEvent(element) {
+    if (!element || !element.isConnected) return;
+    restoreElement(element);
 
-//returns weekdayFactor (number of "widths" away from the left)
-function getWeekdayFactor(element) {
-  return calculateFactor(element.style.left.slice(0, -1));
-}
-
-//redraws course in correct width
-function redrawCourse(weekdayFactor, course) {
-  if (isInSmallViewport()) {
-    course.style.left = "0%";
-    course.style.width = "100%";
-  } else {
-    course.style.left = `${weekdayFactor * WIDTH}%`;
-    course.style.width = `${WIDTH}%`;
-  }
-}
-
-//redraws calendar with correct widths
-function redrawCalendar() {
-  for (const course of courseElements) {
-    redrawCourse(getWeekdayFactor(course), course);
-  }
-}
-
-function draw() {
-  resetCalendar();
-  displayElements();
-  if (TERM != 0) {
-    redrawCalendar();
-  }
-}
-
-function refreshCourseElements() {
-  courseElements = Array.from(
-    document.querySelectorAll(courseElementClasses),
-  );
-}
-
-// updates the calendar
-function updateCalendar() {
-  refreshCourseElements();
-  clearCourses();
-  filterCourses();
-  draw();
-  console.log("calendar updated");
-}
-
-async function updateDayOfWeek() {
-  const repaint = async () => {
-    for (let i = 0; i < 2; i++) {
-        await new Promise(resolve => requestAnimationFrame(resolve));
-    }
-  };
-  await repaint();
-
-  updateCalendar();
-  addDayOfWeekEventListener();
-  console.log("day of week changed");
-}
-
-function addDayOfWeekEventListener() {
-  const buttons = document.querySelectorAll(smallViewportDayOfWeekButtonsClasses);
-  if (!buttons) return;
-  buttons.forEach(button => {
-    button.addEventListener("click", updateDayOfWeek);
-  });
-}
-
-// ---------------------- Logics (Testable) ----------------------
-function calculateFactor(leftPos) {
-  return Math.floor(leftPos / WIDTH);
-}
-
-
-// ---------------------- Other UI ----------------------
-
-// creates filter buttons "Term 1" and "Term 2"
-function createFilterButtons() {
-  // header part
-  const headerContents = document.querySelector(".css-fgks37-HeaderContents");
-  if (!headerContents) return;
-
-  // title and x button
-  const existingDivs = headerContents.children;
-  if (existingDivs.length < 2) return;
-
-  const buttonDiv = document.createElement("div");
-  buttonDiv.className = "toolbar-buttons";
-
-  const buttons = ["Term 1", "Term 2"];
-  buttons.forEach((text, index) => {
-    const button = document.createElement("button");
-    button.textContent = text;
-    button.className = "toolbar-button";
-    button.addEventListener("click", () => {
-      TERM = index + 1;
-      updateCalendar();
-      updateButtonStyles(button);
-    });
-    buttonDiv.appendChild(button);
-  });
-
-  // add the buttons inbetween
-  headerContents.insertBefore(buttonDiv, existingDivs[1]);
-}
-
-// sets the selected button to active
-function updateButtonStyles(clickedButton) {
-  const buttons = document.querySelectorAll(".toolbar-button");
-  buttons.forEach((button) => {
-    if (button == clickedButton) {
-      button.classList.add("active");
+    const original = API.state.originalEventAttributes.get(element);
+    if (original) {
+      restoreAttribute(element, "title", original.title);
+      restoreAttribute(element, "tabindex", original.tabIndex);
+      restoreAttribute(
+        element,
+        "data-workday-term-calendar-event",
+        original.marker,
+      );
+      restoreAttribute(
+        element,
+        "data-workday-registration-status",
+        original.status,
+      );
+      restoreAttribute(element, "data-workday-course-id", original.courseId);
+      if (original.courseColor) {
+        element.style.setProperty("--workday-course-color", original.courseColor);
+      } else {
+        element.style.removeProperty("--workday-course-color");
+      }
+      element.classList.toggle("ubc-workday-managed-event", original.managedClass);
     } else {
-      button.classList.remove("active");
-    }
-  });
-}
-
-// adds styles to toolbar buttons
-function addToolbarButtonStyles() {
-  // remove all the remaining styles if any
-  removeStyle("toolbar-button-styles");
-
-  const rule = `
-    .toolbar-buttons {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-left: auto;
-      padding-inline: 10px;
-    }
-    
-    .toolbar-button {
-      padding: 5px 10px;
-      background-color: #f5f5f5;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      height: 30px;
-    }
-    
-    .toolbar-button:not(.active):hover {
-      background-color: #e0e0e0;
-    }
-    
-    .toolbar-button.active {
-      background-color: #418ccf;
-      color: white;
-      border: none;
-    }
-    
-    .css-1i5y6dv-StyledBoxElement-StyledFlex-IconsContainer {
-      margin-inline-start: 0;
+      element.removeAttribute("title");
+      element.removeAttribute("tabindex");
+      element.removeAttribute("data-workday-term-calendar-event");
+      element.removeAttribute("data-workday-registration-status");
+      element.removeAttribute("data-workday-course-id");
+      element.style.removeProperty("--workday-course-color");
+      element.classList.remove("ubc-workday-managed-event");
     }
 
-    .export-button {
-      margin-inline-start: 15px;
-      border-radius: 15px;
-      padding: 5px 15px;
-    }
-  `;
-
-  const styleElement = document.createElement("style");
-  styleElement.id = "toolbar-button-styles";
-  styleElement.appendChild(document.createTextNode(rule));
-
-  document.head.appendChild(styleElement);
-}
-
-/* Commented out for now
-// adds styles to course tables
-function addCourseTableStyles() {
-  // remove all the remaining styles if any
-  removeStyle("course-table-styles");
-
-  let rule =
-    ".WLMM.WKMM { justify-content: center; flex-direction: column; } .WOMY.WKMY.WKMY .WDVM, .WOMY.WKMY.WKMY .WGVM, .WOMY.WKMY.WKMY .WLSM, .WOMY.WKMY.WKMY .WMSM, .WOMY.WKMY.WKMY .WEVM, .WOMY.WKMY.WKMY .WHVM, .WOMY.WKMY.WKMY .WOSM, .WOMY.WKMY.WKMY .WNSM { min-width: 70px; padding: 0 12px;} .WDHN { min-width: 70px } .WJMM { margin: 0; } .WLMM > .WJMM { padding: 0; }";
-  let styleElement = document.createElement("style");
-  styleElement.id = "course-table-styles";
-  styleElement.appendChild(document.createTextNode(rule));
-  document.head.appendChild(styleElement);
-}
-*/
-
-// remove a style with id
-function removeStyle(id) {
-  const styleElement = document.getElementById(id);
-  if (styleElement && document.head) {
-    document.head.removeChild(styleElement);
+    element
+      .querySelectorAll(".ubc-workday-event-summary")
+      .forEach((summary) => summary.remove());
+    delete element.__workdayTermRecord;
+    API.state.lastAppliedStyles.delete(element);
   }
-}
 
-// remove all the styles
-function removeStyles() {
-  const idsToRemove = ["toolbar-button-styles", "course-table-styles"];
-  for (id of idsToRemove) {
-    removeStyle(id);
+  function restoreManagedEvents() {
+    const elements = new Set(
+      (API.state.context?.events || []).map((binding) => binding.element),
+    );
+    document
+      .querySelectorAll(
+        `${EVENT_SELECTOR}, [data-workday-term-calendar-generated="waitlisted"]`,
+      )
+      .forEach((element) => elements.add(element));
+
+    for (const element of elements) {
+      if (
+        element.getAttribute("data-workday-term-calendar-generated") === "waitlisted"
+      ) {
+        element.remove();
+      } else {
+        restoreManagedEvent(element);
+      }
+    }
   }
-}
 
-function addPopupWindowStyle() {
-  const styleElement = document.createElement("style");
-  styleElement.id = "popupWindowStyle";
-  styleElement.appendChild(document.createTextNode(`
-    .WCU.wd-popup {
-      max-width: 1000px !important;
-      width: 100%;
+  function colorHash(key) {
+    let hash = 0;
+    for (const character of key) {
+      hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
     }
+    return hash;
+  }
 
-    .WPT.wd-popup-content {
-      max-width: none !important;
-      width: 100%;
+  function recordColorKey(record) {
+    return (
+      compactKey(record && (record.courseId || record.displayName || record.name)) ||
+      "UNKNOWN"
+    );
+  }
+
+  function findAvailableColorSlot(key, occupiedSlots) {
+    if (!PALETTE.length) return null;
+    const preferredSlot = colorHash(key) % PALETTE.length;
+    if (!occupiedSlots.size) return preferredSlot;
+
+    // Spread adjacent course assignments across the palette. The score is a
+    // colour-distance metric, so every new course is as different as possible
+    // from the colours already used while the hash remains the tie-breaker.
+    let bestSlot = null;
+    let bestDistance = -Infinity;
+    let bestTieDistance = Infinity;
+    for (let slot = 0; slot < PALETTE.length; slot += 1) {
+      if (occupiedSlots.has(slot)) continue;
+      const distance = Math.min(
+        ...Array.from(occupiedSlots, (occupiedSlot) =>
+          colourDistance(slot, occupiedSlot),
+        ),
+      );
+      const tieDistance =
+        (slot - preferredSlot + PALETTE.length) % PALETTE.length;
+      if (
+        distance > bestDistance + 0.000001 ||
+        (Math.abs(distance - bestDistance) <= 0.000001 &&
+          tieDistance < bestTieDistance)
+      ) {
+        bestSlot = slot;
+        bestDistance = distance;
+        bestTieDistance = tieDistance;
+      }
     }
+    return bestSlot;
+  }
 
-    @media screen and (max-width: 1250px) {
-      .WCU.wd-popup {
-        max-width: 80% !important;
+  function colourDistance(leftSlot, rightSlot) {
+    const left = PALETTE_RGB[leftSlot];
+    const right = PALETTE_RGB[rightSlot];
+    const redMean = (left.red + right.red) / 2;
+    const red = left.red - right.red;
+    const green = left.green - right.green;
+    const blue = left.blue - right.blue;
+    return Math.sqrt(
+      ((512 + redMean) * red * red) / 256 +
+        4 * green * green +
+        ((767 - redMean) * blue * blue) / 256,
+    );
+  }
+
+  function getOverflowColor(key, usedColors) {
+    const hash = colorHash(key);
+    for (let offset = 0; offset < 360; offset += 1) {
+      const hue = (hash + offset * 17) % 360;
+      const color = `hsl(${hue}, 48%, 78%)`;
+      if (!usedColors.has(color)) return color;
+    }
+    return `hsl(${hash % 360}, 48%, 78%)`;
+  }
+
+  function assignCourseColors(records = []) {
+    const colors = API.state.courseColors;
+    const slots =
+      API.state.courseColorSlots ||
+      (API.state.courseColorSlots = new Map());
+    const keys = Array.from(new Set(records.map(recordColorKey))).sort();
+    const occupiedSlots = new Set();
+    const usedColors = new Set();
+
+    // Preserve assignments already made during this page session whenever
+    // possible. This keeps a refresh from recolouring courses that remain open.
+    for (const key of keys) {
+      const slot = slots.get(key);
+      if (
+        Number.isInteger(slot) &&
+        slot >= 0 &&
+        slot < PALETTE.length &&
+        !occupiedSlots.has(slot)
+      ) {
+        occupiedSlots.add(slot);
+        colors.set(key, PALETTE[slot]);
+        usedColors.add(PALETTE[slot]);
       }
     }
 
-    ${courseNameTextClasses} {
-      font-size: 11px;
+    for (const key of keys) {
+      if (colors.has(key) && usedColors.has(colors.get(key))) continue;
+
+      const slot = findAvailableColorSlot(key, occupiedSlots);
+      if (slot !== null) {
+        slots.set(key, slot);
+        occupiedSlots.add(slot);
+        colors.set(key, PALETTE[slot]);
+        usedColors.add(PALETTE[slot]);
+        continue;
+      }
+
+      const color = getOverflowColor(key, usedColors);
+      colors.set(key, color);
+      usedColors.add(color);
+    }
+  }
+
+  function getCourseColor(courseId) {
+    const key = compactKey(courseId) || "UNKNOWN";
+    const colors = API.state.courseColors;
+    if (!colors.has(key)) {
+      assignCourseColors([
+        ...(API.state.context?.records || []),
+        { courseId: key },
+      ]);
+    }
+    if (colors.has(key)) return colors.get(key);
+
+    const color = getOverflowColor(key, new Set(colors.values()));
+    colors.set(key, color);
+    return color;
+  }
+
+  function termLabel(term) {
+    if (term === 3) return "Full year";
+    return term === 2 ? "Term 2" : "Term 1";
+  }
+
+  function recordLabel(record) {
+    return record.displayName || record.courseId || record.name || "Course";
+  }
+
+  function recordTitle(record) {
+    return record.title || "";
+  }
+
+  function eventDescription(record) {
+    const title = recordTitle(record);
+    if (title) return title;
+    const fullName = normaliseText(record.name || "");
+    const code = normaliseText(recordLabel(record));
+    if (fullName.toLowerCase().startsWith(code.toLowerCase())) {
+      return fullName.slice(code.length).replace(/^\s*[-–—:]\s*/, "");
+    }
+    return "";
+  }
+
+  function ensureSummary(element, record) {
+    let summary = Array.from(element.children || []).find((child) =>
+      child.classList.contains("ubc-workday-event-summary"),
+    );
+    if (!summary) {
+      summary = document.createElement("div");
+      summary.className = "ubc-workday-event-summary";
+      const code = document.createElement("span");
+      code.className = "ubc-workday-event-code";
+      const description = document.createElement("span");
+      description.className = "ubc-workday-event-description";
+      summary.append(code, description);
+      element.appendChild(summary);
     }
 
-    ${courseDescriptionTextClasses} {
-      font-size: 10px
+    const code = summary.querySelector(".ubc-workday-event-code");
+    const description = summary.querySelector(".ubc-workday-event-description");
+    if (code) code.textContent = recordLabel(record);
+    if (description) description.textContent = eventDescription(record);
+
+    let badge = summary.querySelector(".ubc-workday-wl-badge");
+    if (record.registrationStatus === "waitlisted") {
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "ubc-workday-wl-badge";
+        summary.appendChild(badge);
+      }
+      badge.textContent = "WL";
+    } else if (badge) {
+      badge.remove();
     }
-  `));
-  document.head.appendChild(styleElement);
-}
+  }
 
-// create toolbar buttons (filter and export)
-function createToolbarButtons() {
-  createFilterButtons();
-  createExportButton();
-  addToolbarButtonStyles();
-}
+  function decorateEvent(binding) {
+    const { element, record } = binding;
+    const status = record.registrationStatus === "waitlisted" ? "waitlisted" : "registered";
+    const term = termLabel(record.term);
+    const details = record.details || record.rowText || "";
+    const title = `${record.name || recordLabel(record)}\n${
+      status === "waitlisted" ? "Waitlisted" : "Registered"
+    } · ${term}${details ? `\n${details}` : ""}`;
 
-function setupUI() {
-  createToolbarButtons();
-  addPopupWindowStyle();
-}
+    element.setAttribute("data-workday-term-calendar-event", "true");
+    element.setAttribute("data-workday-registration-status", status);
+    element.setAttribute("data-workday-course-id", record.courseId || "");
+    element.style.setProperty("--workday-course-color", getCourseColor(record.courseId));
+    element.title = title;
+    ensureSummary(element, record);
+    bindEventInteraction(element, record);
+  }
+
+  function getOriginalPosition(element) {
+    return API.state.originalPositions.get(element) || null;
+  }
+
+  function getDay(element) {
+    const position = getOriginalPosition(element);
+    if (!position || !Number.isFinite(position.leftPercent)) return null;
+    const left = position.leftPercent;
+    const width = position.widthPercent;
+    if (Number.isFinite(width) && Math.abs(width - DAY_WIDTH) <= 1.5) {
+      return Math.max(0, Math.min(6, Math.round(left / DAY_WIDTH)));
+    }
+    return Math.max(0, Math.min(6, Math.floor(left / DAY_WIDTH + 0.01)));
+  }
+
+  function getScheduleInterval(binding) {
+    const record = binding.record;
+    const meetings = Array.isArray(record && record.meetings)
+      ? record.meetings
+      : [];
+    const schedule =
+      meetings.length === 1
+        ? meetings[0]
+        : meetings.length === 0
+          ? record
+          : null;
+    if (
+      schedule &&
+      Number.isFinite(schedule.startMinutes) &&
+      Number.isFinite(schedule.endMinutes) &&
+      schedule.endMinutes > schedule.startMinutes
+    ) {
+      return {
+        start: schedule.startMinutes,
+        end: schedule.endMinutes,
+        tolerance: 0,
+      };
+    }
+    return null;
+  }
+
+  function getGeometryInterval(binding) {
+    const position = getOriginalPosition(binding.element);
+    if (
+      !position ||
+      !Number.isFinite(position.topPixels) ||
+      !Number.isFinite(position.heightPixels) ||
+      position.heightPixels <= 0
+    ) {
+      return null;
+    }
+    return {
+      start: position.topPixels,
+      end: position.topPixels + position.heightPixels,
+      tolerance: GEOMETRY_BOUNDARY_TOLERANCE_PX,
+    };
+  }
+
+  function intervalsOverlap(left, right) {
+    const tolerance = Math.max(left.tolerance || 0, right.tolerance || 0);
+    return (
+      left.start < right.end - tolerance &&
+      left.end > right.start + tolerance
+    );
+  }
+
+  function sortedIntervals(bindings) {
+    const scheduleIntervals = bindings.map(getScheduleInterval);
+    const useScheduleIntervals = scheduleIntervals.every(Boolean);
+    return bindings
+      .map((binding, index) => ({
+        binding,
+        interval: useScheduleIntervals
+          ? scheduleIntervals[index]
+          : getGeometryInterval(binding),
+      }))
+      .filter((item) => item.interval)
+      .sort((left, right) => left.interval.start - right.interval.start);
+  }
+
+  function maxConcurrentCount(items, target) {
+    const points = [];
+    for (const item of items) {
+      if (intervalsOverlap(item.interval, target.interval)) {
+        points.push(
+          { position: item.interval.start, delta: 1 },
+          { position: item.interval.end, delta: -1 },
+        );
+      }
+    }
+
+    points.sort(
+      (left, right) => left.position - right.position || left.delta - right.delta,
+    );
+    let active = 0;
+    let maximum = 0;
+    for (const point of points) {
+      active += point.delta;
+      maximum = Math.max(maximum, active);
+    }
+    return Math.max(1, maximum);
+  }
+
+  function redrawConflicts(bindings) {
+    const viewInfo = API.getCalendarViewInfo
+      ? API.getCalendarViewInfo(API.state.context?.surface, bindings)
+      : { singleDay: false };
+    const columnWidth = viewInfo.singleDay ? 100 : DAY_WIDTH;
+    const byDay = new Map();
+    for (const binding of bindings) {
+      const day = viewInfo.singleDay ? 0 : getDay(binding.element);
+      if (day === null) continue;
+      if (!byDay.has(day)) byDay.set(day, []);
+      byDay.get(day).push(binding);
+    }
+
+    for (const [day, dayBindings] of byDay) {
+      const items = sortedIntervals(dayBindings);
+      const laneEnds = [];
+      for (const item of items) {
+        let lane = laneEnds.findIndex(
+          (end) => !intervalsOverlap(end, item.interval),
+        );
+        if (lane < 0) {
+          lane = laneEnds.length;
+          laneEnds.push(item.interval);
+        } else {
+          laneEnds[lane] = item.interval;
+        }
+
+        const laneCount = maxConcurrentCount(items, item);
+        const laneWidth = columnWidth / laneCount;
+        item.binding.element.style.left = `${day * columnWidth + lane * laneWidth}%`;
+        item.binding.element.style.width = `${laneWidth}%`;
+      }
+    }
+  }
+
+  function isShown(record) {
+    return (
+      (record.term === API.state.activeTerm || record.term === 3) &&
+      (record.registrationStatus !== "waitlisted" || API.state.showWaitlisted)
+    );
+  }
+
+  function applyTerm(term) {
+    API.state.activeTerm = term === 2 ? 2 : 1;
+    const context = API.state.context;
+    if (!context || !context.surface) return;
+    assignCourseColors(context.records || []);
+
+    const visibleBindings = [];
+    for (const binding of context.events || []) {
+      restoreElement(binding.element);
+      decorateEvent(binding);
+      if (isShown(binding.record)) {
+        binding.element.style.display =
+          API.state.originalDisplays.get(binding.element) || "";
+        visibleBindings.push(binding);
+      } else {
+        binding.element.style.display = "none";
+      }
+    }
+
+    redrawConflicts(visibleBindings);
+    for (const binding of context.events || []) {
+      API.state.lastAppliedStyles.set(binding.element, {
+        display: binding.element.style.display || "",
+        left: binding.element.style.left || "",
+        width: binding.element.style.width || "",
+        top: binding.element.style.top || "",
+        height: binding.element.style.height || "",
+      });
+    }
+    updateToolbarState();
+  }
+
+  function setShowWaitlisted(show) {
+    API.state.showWaitlisted = Boolean(show);
+    applyTerm(API.state.activeTerm);
+  }
+
+  function findCloseControl(root) {
+    if (!root) return null;
+    return Array.from(
+      root.querySelectorAll("button,[role=button],[data-automation-id]"),
+    ).find((control) => {
+      const label = `${control.textContent || ""} ${
+        control.getAttribute("aria-label") || ""
+      } ${control.getAttribute("title") || ""} ${
+        control.getAttribute("data-automation-id") || ""
+      }`.toLowerCase();
+      return /close|dismiss|cancel|(^|\s)[×x](\s|$)/.test(label);
+    });
+  }
+
+  function hasCalendarTitle(root) {
+    const text = normaliseText(root.textContent);
+    return /\bcourse\b/i.test(text) && /\bcalendar\b/i.test(text);
+  }
+
+  function findTitleBar(surface) {
+    if (!surface) return null;
+    const headerContents = Array.from(
+      surface.querySelectorAll('[class*="HeaderContents"]'),
+    )
+      .map((element) => ({
+        element,
+        close: findCloseControl(element),
+        visible:
+          !global.getComputedStyle ||
+          (global.getComputedStyle(element).display !== "none" &&
+            global.getComputedStyle(element).visibility !== "hidden"),
+      }))
+      .filter(
+        ({ element, close }) =>
+          element !== surface && hasCalendarTitle(element) && close,
+      )
+      .sort((left, right) => {
+        if (left.visible !== right.visible) return left.visible ? -1 : 1;
+        return normaliseText(left.element.textContent).length -
+          normaliseText(right.element.textContent).length;
+      });
+    if (headerContents.length) {
+      return {
+        element: headerContents[0].element,
+        close: headerContents[0].close,
+      };
+    }
+
+    const candidates = [];
+    const add = (elements) => candidates.push(...elements);
+    add(Array.from(surface.querySelectorAll('[data-automation-id="pageHeader"]')));
+    for (const container of surface.querySelectorAll(
+      '[data-automation-id="pageHeaderTitleContainer"]',
+    )) {
+      if (container.parentElement) candidates.push(container.parentElement);
+    }
+    add(Array.from(surface.querySelectorAll("header")));
+    add(
+      Array.from(
+        surface.querySelectorAll('h1,h2,h3,[role="heading"]'),
+      ).map((heading) => heading.parentElement || heading),
+    );
+
+    for (const candidate of Array.from(new Set(candidates))) {
+      let current = candidate;
+      for (let depth = 0; current && depth < 2; depth += 1) {
+        if (
+          current !== surface &&
+          surface.contains(current) &&
+          hasCalendarTitle(current)
+        ) {
+          const close = findCloseControl(current);
+          if (close) return { element: current, close };
+        }
+        current = current.parentElement;
+      }
+    }
+    return null;
+  }
+
+  function removeToolbars() {
+    document
+      .querySelectorAll(
+        `${TOOLBAR_SELECTOR}, ${EXPORT_ROW_SELECTOR}`,
+      )
+      .forEach((toolbar) => toolbar.remove());
+    document
+      .querySelectorAll(TITLEBAR_SELECTOR)
+      .forEach((titleBar) => titleBar.removeAttribute("data-workday-term-calendar-titlebar"));
+  }
+
+  function toolbarButton(toolbar, selector, label, className, parent = toolbar) {
+    let button = toolbar.querySelector(selector);
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+    }
+    button.classList.add(className);
+    button.textContent = label;
+    if (button.parentElement !== parent) {
+      parent.appendChild(button);
+    }
+    return button;
+  }
+
+  function toolbarGroup(toolbar, className, label) {
+    let group = toolbar.querySelector(`.${className}`);
+    if (!group) {
+      group = document.createElement("div");
+    }
+    group.className = `ubc-workday-toolbar-group ${className}`;
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", label);
+    return group;
+  }
+
+  function findCalendarAnchor(surface) {
+    const nativeEvent = surface.querySelector(
+      '[data-automation-id="calendarevent"], [data-automation-id="calendarEvent"], .WMSC.WKSC.WLTC.WEUC',
+    );
+    if (nativeEvent) {
+      return (
+        nativeEvent.closest('table,[role="grid"],[role="presentation"]') ||
+        nativeEvent.offsetParent ||
+        nativeEvent.parentElement
+      );
+    }
+
+    const fallbackEvent = API.findEventCandidates
+      ? API.findEventCandidates(surface, API.state.context?.records || [])[0]
+      : null;
+    if (fallbackEvent) {
+      return (
+        fallbackEvent.closest('table,[role="grid"],[role="presentation"]') ||
+        fallbackEvent.offsetParent ||
+        fallbackEvent.parentElement
+      );
+    }
+
+    return surface.querySelector(
+      '[role="grid"], [data-automation-id*="calendar"], [class*="Calendar"], [class*="calendar"]',
+    );
+  }
+
+  function findCalendarContainer(surface, titleBarElement, row) {
+    const calendarAnchor = findCalendarAnchor(surface);
+    if (!calendarAnchor || calendarAnchor === surface) return null;
+
+    let header = titleBarElement;
+    while (header.parentElement && header.parentElement !== surface) {
+      header = header.parentElement;
+    }
+
+    let candidate = header.nextElementSibling;
+    while (candidate) {
+      if (candidate !== row && candidate.contains(calendarAnchor)) {
+        return candidate;
+      }
+      candidate = candidate.nextElementSibling;
+    }
+
+    let container = calendarAnchor;
+    while (container.parentElement && container.parentElement !== surface) {
+      container = container.parentElement;
+    }
+    return container === titleBarElement || container.contains(titleBarElement)
+      ? null
+      : container;
+  }
+
+  function exportRow(surface, titleBarElement) {
+    const rows = Array.from(document.querySelectorAll(EXPORT_ROW_SELECTOR));
+    let row = rows.find((candidate) => surface.contains(candidate));
+
+    let container = findCalendarContainer(surface, titleBarElement, row);
+    if (!container) {
+      return null;
+    }
+    if (/^(TABLE|TBODY|THEAD|TR)$/i.test(container.tagName)) {
+      container = container.parentElement || container;
+    }
+
+    if (!row) row = document.createElement("div");
+
+    rows
+      .filter((candidate) => candidate !== row)
+      .forEach((candidate) => candidate.remove());
+    row.setAttribute("data-workday-term-calendar-export-row", "true");
+
+    let header = titleBarElement;
+    while (header.parentElement && header.parentElement !== surface) {
+      header = header.parentElement;
+    }
+    let firstContent = header.nextElementSibling;
+    while (firstContent === row) {
+      firstContent = firstContent.nextElementSibling;
+    }
+    const reference = firstContent || container;
+    const host = reference.parentElement || container.parentElement || container;
+    if (row.parentElement !== host || row.nextElementSibling !== reference) {
+      host.insertBefore(row, reference);
+    }
+    return row;
+  }
+
+  function updateToolbarState() {
+    const toolbar = document.querySelector(TOOLBAR_SELECTOR);
+    if (!toolbar) return;
+    const term1 = toolbar.querySelector('[data-workday-term="1"]');
+    const term2 = toolbar.querySelector('[data-workday-term="2"]');
+    const waitlisted = toolbar.querySelector(
+      '[data-workday-show-waitlisted="true"]',
+    );
+    if (term1) term1.setAttribute("aria-pressed", String(API.state.activeTerm === 1));
+    if (term2) term2.setAttribute("aria-pressed", String(API.state.activeTerm === 2));
+    if (waitlisted) {
+      waitlisted.setAttribute("aria-pressed", String(API.state.showWaitlisted));
+      waitlisted.textContent = API.state.showWaitlisted
+        ? "Hide waitlisted"
+        : "Show waitlisted";
+    }
+  }
+
+  function addFilterButtons(context) {
+    const surface = context && context.surface;
+    const titleBar = findTitleBar(surface);
+    if (!titleBar) {
+      removeToolbars();
+      return null;
+    }
+
+    document.querySelectorAll(TITLEBAR_SELECTOR).forEach((element) => {
+      if (element !== titleBar.element) {
+        element.removeAttribute("data-workday-term-calendar-titlebar");
+      }
+    });
+
+    const toolbars = Array.from(surface.querySelectorAll(TOOLBAR_SELECTOR));
+    const toolbar = toolbars[0] || document.createElement("div");
+    toolbars.forEach((existing) => {
+      if (existing !== toolbar) existing.remove();
+    });
+
+    toolbar.setAttribute("data-workday-term-calendar-toolbar", "true");
+    titleBar.element.setAttribute("data-workday-term-calendar-titlebar", "true");
+    const exportControls = exportRow(surface, titleBar.element);
+    if (!exportControls) {
+      removeToolbars();
+      return null;
+    }
+    const exportButton =
+      typeof API.addExportButton === "function"
+        ? API.addExportButton(exportControls)
+        : null;
+    if (exportButton && exportControls.firstElementChild !== exportButton) {
+      exportControls.insertBefore(exportButton, exportControls.firstElementChild);
+    }
+    if (
+      toolbar.parentElement !== exportControls ||
+      toolbar !== exportControls.lastElementChild
+    ) {
+      exportControls.appendChild(toolbar);
+    }
+
+    const termGroup = toolbarGroup(toolbar, "ubc-workday-term-group", "Term filter");
+    const waitlistedGroup = toolbarGroup(
+      toolbar,
+      "ubc-workday-waitlisted-group",
+      "Waitlisted filter",
+    );
+    const term1 = toolbarButton(
+      toolbar,
+      '[data-workday-term="1"]',
+      "Term 1",
+      "ubc-workday-term-button",
+      termGroup,
+    );
+    const term2 = toolbarButton(
+      toolbar,
+      '[data-workday-term="2"]',
+      "Term 2",
+      "ubc-workday-term-button",
+      termGroup,
+    );
+    const waitlisted = toolbarButton(
+      toolbar,
+      '[data-workday-show-waitlisted="true"]',
+      "Show waitlisted",
+      "ubc-workday-waitlisted-button",
+      waitlistedGroup,
+    );
+    if (
+      toolbar.firstElementChild !== termGroup ||
+      termGroup.nextElementSibling !== waitlistedGroup
+    ) {
+      toolbar.append(termGroup, waitlistedGroup);
+    }
+    term1.setAttribute("data-workday-term", "1");
+    term2.setAttribute("data-workday-term", "2");
+    waitlisted.setAttribute("data-workday-show-waitlisted", "true");
+
+    if (!term1.__workdayTermListener) {
+      term1.__workdayTermListener = true;
+      term1.addEventListener("click", () => applyTerm(1));
+    }
+    if (!term2.__workdayTermListener) {
+      term2.__workdayTermListener = true;
+      term2.addEventListener("click", () => applyTerm(2));
+    }
+    if (!waitlisted.__workdayTermListener) {
+      waitlisted.__workdayTermListener = true;
+      waitlisted.addEventListener("click", () =>
+        setShowWaitlisted(!API.state.showWaitlisted),
+      );
+    }
+    updateToolbarState();
+    return toolbar;
+  }
+
+  function isValidDetailDate(value) {
+    return value instanceof Date && !Number.isNaN(value.getTime());
+  }
+
+  function formatDetailDate(value, includeYear = true) {
+    if (!isValidDetailDate(value)) return "";
+    const options = {
+      month: "short",
+      day: "numeric",
+    };
+    if (includeYear) options.year = "numeric";
+    return new Intl.DateTimeFormat(undefined, options).format(value);
+  }
+
+  function formatDetailTime(minutes) {
+    if (!Number.isFinite(minutes)) return "";
+    const total = ((Math.round(minutes) % 1440) + 1440) % 1440;
+    const hour24 = Math.floor(total / 60);
+    const hour12 = hour24 % 12 || 12;
+    const meridiem = hour24 >= 12 ? "PM" : "AM";
+    return `${hour12}:${String(total % 60).padStart(2, "0")} ${meridiem}`;
+  }
+
+  function formatDetailMeetingDate(meeting, sharedYear = null) {
+    const startDate = meeting && meeting.startDate;
+    const endDate = meeting && (meeting.endDate || meeting.startDate);
+    if (!isValidDetailDate(startDate)) return "";
+
+    const sameDate =
+      isValidDetailDate(endDate) &&
+      startDate.getTime() === endDate.getTime();
+    const sameYear =
+      isValidDetailDate(endDate) &&
+      startDate.getFullYear() === endDate.getFullYear();
+    const omitYear =
+      Number.isInteger(sharedYear) &&
+      sameYear &&
+      startDate.getFullYear() === sharedYear;
+
+    if (sameDate || !isValidDetailDate(endDate)) {
+      return formatDetailDate(startDate, !omitYear);
+    }
+
+    if (sameYear) {
+      const start = formatDetailDate(startDate, false);
+      const endDay = new Intl.DateTimeFormat(undefined, {
+        day: "numeric",
+      }).format(endDate);
+      const end =
+        startDate.getMonth() === endDate.getMonth()
+          ? endDay
+          : formatDetailDate(endDate, false);
+      const range =
+        startDate.getMonth() === endDate.getMonth()
+          ? `${start}–${end}`
+          : `${start} – ${end}`;
+      return omitYear ? range : `${range}, ${startDate.getFullYear()}`;
+    }
+
+    return `${formatDetailDate(startDate)} – ${formatDetailDate(endDate)}`;
+  }
+
+  function getMeetingLocation(meeting) {
+    if (meeting && meeting.location && typeof meeting.location === "object") {
+      return meeting.location;
+    }
+
+    const parts = normaliseText(meeting && meeting.text ? meeting.text : "")
+      .split("|")
+      .slice(3)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (typeof API.parseLocationParts === "function") {
+      return API.parseLocationParts(parts);
+    }
+    return {
+      campus: "",
+      building: parts[0] || "",
+      floor: "",
+      room: "",
+      extras: parts.slice(1),
+      label: parts.join(", "),
+    };
+  }
+
+  function hasMeetingLocation(location) {
+    return Boolean(
+      location &&
+        (location.campus ||
+          location.building ||
+          location.floor ||
+          location.room ||
+          (Array.isArray(location.extras) && location.extras.length)),
+    );
+  }
+
+  function createLocationIcon() {
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const icon = document.createElementNS(svgNamespace, "svg");
+    icon.setAttribute("aria-hidden", "true");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("fill", "none");
+    icon.setAttribute("stroke", "currentColor");
+    icon.setAttribute("stroke-linecap", "round");
+    icon.setAttribute("stroke-linejoin", "round");
+    icon.setAttribute("stroke-width", "1.8");
+
+    const pin = document.createElementNS(svgNamespace, "path");
+    pin.setAttribute(
+      "d",
+      "M12 21s7-5.4 7-12a7 7 0 1 0-14 0c0 6.6 7 12 7 12Z",
+    );
+    const center = document.createElementNS(svgNamespace, "circle");
+    center.setAttribute("cx", "12");
+    center.setAttribute("cy", "9");
+    center.setAttribute("r", "2.3");
+    icon.append(pin, center);
+    return icon;
+  }
+
+  function appendLocationCard(parent, location) {
+    if (!hasMeetingLocation(location)) return;
+
+    const card = document.createElement("div");
+    card.className = "ubc-workday-detail-popover-location";
+
+    const heading = document.createElement("div");
+    heading.className = "ubc-workday-detail-popover-location-heading";
+    const icon = document.createElement("span");
+    icon.className = "ubc-workday-detail-popover-location-icon";
+    icon.appendChild(createLocationIcon());
+    const label = document.createElement("span");
+    label.textContent = "Location";
+    heading.append(icon, label);
+
+    if (location.campus) {
+      const campus = document.createElement("span");
+      campus.className = "ubc-workday-detail-popover-location-campus";
+      campus.textContent = location.campus;
+      heading.appendChild(campus);
+    }
+    card.appendChild(heading);
+
+    if (location.building) {
+      const building = document.createElement("div");
+      building.className = "ubc-workday-detail-popover-location-building";
+      building.textContent = location.building;
+      card.appendChild(building);
+    }
+
+    const detailValues = [
+      location.floor ? `Floor ${location.floor}` : "",
+      location.room ? `Room ${location.room}` : "",
+      ...(Array.isArray(location.extras) ? location.extras : []),
+    ].filter(Boolean);
+    if (detailValues.length) {
+      const details = document.createElement("div");
+      details.className = "ubc-workday-detail-popover-location-details";
+      details.textContent = detailValues.join(" · ");
+      card.appendChild(details);
+    }
+    parent.appendChild(card);
+  }
+
+  function locationSignature(location) {
+    if (!location) return "";
+    return [
+      location.campus || "",
+      location.building || "",
+      location.floor || "",
+      location.room || "",
+      location.label || "",
+      ...(Array.isArray(location.extras) ? location.extras : []),
+    ]
+      .map((value) => normaliseText(value))
+      .join("\u001f");
+  }
+
+  function meetingScheduleSignature(meeting) {
+    const days = Array.from(new Set(meeting.meetingDays || []))
+      .filter((day) => Number.isFinite(day))
+      .sort((left, right) => left - right)
+      .join(",");
+    return [
+      days,
+      Number.isFinite(meeting.startMinutes) ? meeting.startMinutes : "",
+      Number.isFinite(meeting.endMinutes) ? meeting.endMinutes : "",
+      locationSignature(getMeetingLocation(meeting)),
+    ].join("|");
+  }
+
+  function groupMeetings(meetings) {
+    const groups = [];
+    let current = null;
+    meetings.forEach((meeting) => {
+      const key = meetingScheduleSignature(meeting);
+      if (!current || current.key !== key) {
+        current = { key, meetings: [] };
+        groups.push(current);
+      }
+      current.meetings.push(meeting);
+    });
+    return groups;
+  }
+
+  function sharedMeetingDateYear(meetings) {
+    const years = new Set();
+    meetings.forEach((meeting) => {
+      [meeting.startDate, meeting.endDate || meeting.startDate].forEach(
+        (date) => {
+          if (isValidDetailDate(date)) years.add(date.getFullYear());
+        },
+      );
+    });
+    return years.size === 1 ? Array.from(years)[0] : null;
+  }
+
+  function appendMeetingDateLine(parent, date, extraClass = "") {
+    const dateLine = document.createElement("div");
+    dateLine.className = [
+      "ubc-workday-detail-popover-meeting-line",
+      "ubc-workday-detail-popover-meeting-date",
+      extraClass,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    dateLine.textContent = date;
+    parent.appendChild(dateLine);
+  }
+
+  function appendMeetingSchedule(parent, group, separated = false) {
+    const schedule = document.createElement("div");
+    schedule.className = "ubc-workday-detail-popover-meeting-schedule";
+    if (separated) schedule.classList.add("is-separated");
+
+    const sharedYear =
+      group.meetings.length > 1
+        ? sharedMeetingDateYear(group.meetings)
+        : null;
+    const dateValues = group.meetings
+      .map((meeting) => formatDetailMeetingDate(meeting, sharedYear))
+      .filter(Boolean);
+    if (dateValues.length) {
+      const dateText = dateValues.join(" · ");
+      appendMeetingDateLine(
+        schedule,
+        sharedYear !== null ? `${dateText}, ${sharedYear}` : dateText,
+      );
+    }
+
+    const representative = group.meetings[0];
+    if (representative.meetingDays && representative.meetingDays.length) {
+      appendMeetingDayStrip(schedule, representative);
+    }
+    const time = [
+      formatDetailTime(representative.startMinutes),
+      formatDetailTime(representative.endMinutes),
+    ]
+      .filter(Boolean)
+      .join(" – ");
+    if (time) {
+      const timeLine = document.createElement("div");
+      timeLine.className =
+        "ubc-workday-detail-popover-meeting-line ubc-workday-detail-popover-meeting-time";
+      timeLine.textContent = time;
+      schedule.appendChild(timeLine);
+    }
+    parent.appendChild(schedule);
+  }
+
+  function appendMeetingDayStrip(parent, meeting) {
+    const strip = document.createElement("div");
+    strip.className = "ubc-workday-detail-popover-day-strip";
+    const activeDays = new Set(meeting.meetingDays || []);
+    const shortNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    strip.setAttribute(
+      "aria-label",
+      (meeting.meetingDays || [])
+        .map((day) => API.DAY_NAMES[day])
+        .filter(Boolean)
+        .join(", "),
+    );
+    shortNames.forEach((name, day) => {
+      const dayElement = document.createElement("span");
+      dayElement.className = "ubc-workday-detail-popover-day";
+      if (activeDays.has(day)) dayElement.classList.add("is-active");
+      dayElement.textContent = name;
+      strip.appendChild(dayElement);
+    });
+    parent.appendChild(strip);
+  }
+
+  function detailCourseCode(record) {
+    const code = normaliseText(record.displayName || record.courseId || "");
+    const section = normaliseText(record.section || "");
+    if (!code) return normaliseText(record.name || "Course");
+    return section ? `${code}-${section}` : code;
+  }
+
+  function detailDescription(record) {
+    let value = normaliseText(record.title || eventDescription(record));
+    const codes = [
+      detailCourseCode(record),
+      record.displayName,
+      record.courseId,
+    ]
+      .map((code) => normaliseText(code))
+      .filter(Boolean)
+      .sort((left, right) => right.length - left.length);
+    for (const code of codes) {
+      const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      value = value.replace(new RegExp(escaped, "gi"), " ");
+    }
+    value = normaliseText(
+      value
+        .replace(/^\s*[-–—:]\s*/, "")
+        .replace(/\s*[-–—:]\s*$/, ""),
+    );
+    const repeatedParts = value
+      .split(/\s+[-–—:]\s+/)
+      .map((part) => normaliseText(part))
+      .filter(Boolean);
+    if (
+      repeatedParts.length === 2 &&
+      repeatedParts[0].toLowerCase() === repeatedParts[1].toLowerCase()
+    ) {
+      return repeatedParts[0];
+    }
+    return value;
+  }
+
+  function detailCredits(value) {
+    const text = normaliseText(value);
+    if (!text) return "";
+    if (/^\d+(?:\.\d+)?(?:\s*(?:credits?|units?))?$/i.test(text)) {
+      return text;
+    }
+    const numbers = text.match(/\d+(?:\.\d+)?/g) || [];
+    return numbers.length && numbers.every((number) => number === numbers[0])
+      ? numbers[0]
+      : "";
+  }
+
+  function addPopoverField(body, label, value) {
+    if (!value) return;
+    const field = document.createElement("div");
+    field.className = "ubc-workday-detail-popover-field";
+    const labelElement = document.createElement("div");
+    labelElement.className = "ubc-workday-detail-popover-label";
+    labelElement.textContent = label;
+    const valueElement = document.createElement("div");
+    valueElement.className = "ubc-workday-detail-popover-value";
+    valueElement.textContent = value;
+    field.append(labelElement, valueElement);
+    body.appendChild(field);
+  }
+
+  function showDetails(anchor, record) {
+    closePopover();
+    const popover = document.createElement("div");
+    popover.className = "ubc-workday-detail-popover";
+    popover.setAttribute("role", "dialog");
+    popover.setAttribute("aria-label", "Course details");
+    popover.style.setProperty(
+      "--workday-course-color",
+      getCourseColor(record.courseId),
+    );
+
+    const header = document.createElement("div");
+    header.className = "ubc-workday-detail-popover-header";
+    const title = document.createElement("div");
+    title.className = "ubc-workday-detail-popover-title";
+    title.textContent = detailCourseCode(record);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "ubc-workday-detail-popover-close";
+    close.setAttribute("aria-label", "Close course details");
+    close.textContent = "×";
+    header.append(title, close);
+
+    const body = document.createElement("div");
+    body.className = "ubc-workday-detail-popover-body";
+    const status = document.createElement("div");
+    status.className = "ubc-workday-detail-popover-status";
+    status.dataset.status = record.registrationStatus;
+    status.textContent =
+      record.registrationStatus === "waitlisted" ? "Waitlisted" : "Registered";
+    const term = document.createElement("div");
+    term.className = "ubc-workday-detail-popover-term";
+    term.textContent = termLabel(record.term);
+    const meta = document.createElement("div");
+    meta.className = "ubc-workday-detail-popover-meta";
+    meta.append(status, term);
+    body.appendChild(meta);
+
+    addPopoverField(body, "Description", detailDescription(record));
+    addPopoverField(body, "Credits", detailCredits(record.credits));
+    addPopoverField(body, "Instructor", record.instructor || "");
+
+    const meetings = record.meetings && record.meetings.length
+      ? record.meetings
+      : record.startDate || Number.isFinite(record.startMinutes)
+        ? [record]
+        : [];
+    if (meetings.length) {
+      const groups = groupMeetings(meetings);
+      const locationKeys = new Set(
+        groups.map((group) =>
+          locationSignature(getMeetingLocation(group.meetings[0])),
+        ),
+      );
+
+      if (locationKeys.size === 1) {
+        const sharedLocation = getMeetingLocation(groups[0].meetings[0]);
+        if (hasMeetingLocation(sharedLocation)) {
+          const locationsList = document.createElement("div");
+          locationsList.className = "ubc-workday-detail-popover-locations";
+          appendLocationCard(locationsList, sharedLocation);
+          body.appendChild(locationsList);
+        }
+
+        const meetingsList = document.createElement("div");
+        meetingsList.className = "ubc-workday-detail-popover-meetings";
+        groups.forEach((group, index) =>
+          appendMeetingSchedule(meetingsList, group, index > 0),
+        );
+        body.appendChild(meetingsList);
+      } else {
+        const groupsList = document.createElement("div");
+        groupsList.className =
+          "ubc-workday-detail-popover-meeting-groups";
+        groups.forEach((group) => {
+          const groupElement = document.createElement("div");
+          groupElement.className =
+            "ubc-workday-detail-popover-meeting-group";
+          const location = getMeetingLocation(group.meetings[0]);
+          appendLocationCard(groupElement, location);
+          appendMeetingSchedule(groupElement, group, true);
+          groupsList.appendChild(groupElement);
+        });
+        body.appendChild(groupsList);
+      }
+
+    }
+    popover.append(header, body);
+    const surface = API.state.context && API.state.context.surface;
+    const popoverHost = surface && surface.contains(anchor) ? surface : document.body;
+    popoverHost.appendChild(popover);
+    ["pointerdown", "mousedown", "mouseup", "click"].forEach((eventName) => {
+      popover.addEventListener(eventName, (event) => event.stopPropagation());
+    });
+
+    const reposition = () => {
+      if (!popover.isConnected || !anchor.isConnected) return;
+      const margin = 12;
+      const anchorRect = anchor.getBoundingClientRect();
+      const popoverRect = popover.getBoundingClientRect();
+      const viewportWidth = global.innerWidth || document.documentElement.clientWidth;
+      const viewportHeight = global.innerHeight || document.documentElement.clientHeight;
+      let left = anchorRect.left;
+      let top = anchorRect.bottom + 8;
+      if (top + popoverRect.height > viewportHeight - margin) {
+        top = anchorRect.top - popoverRect.height - 8;
+      }
+      left = Math.min(Math.max(margin, left), viewportWidth - popoverRect.width - margin);
+      top = Math.min(Math.max(margin, top), viewportHeight - popoverRect.height - margin);
+      popover.style.left = `${Math.max(margin, left)}px`;
+      popover.style.top = `${Math.max(margin, top)}px`;
+    };
+    const outsideClick = (event) => {
+      if (!popover.contains(event.target) && !anchor.contains(event.target)) {
+        closePopover();
+      }
+    };
+    const escape = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closePopover();
+      }
+    };
+    close.addEventListener("click", closePopover);
+    document.addEventListener("mousedown", outsideClick, true);
+    document.addEventListener("keydown", escape, true);
+    global.addEventListener("resize", reposition);
+    global.addEventListener("scroll", reposition, true);
+    statePopover({ popover, anchor, reposition, outsideClick, escape });
+    reposition();
+    close.focus();
+  }
+
+  function statePopover(value) {
+    API.state.popover = value;
+  }
+
+  function closePopover() {
+    const current = API.state.popover;
+    if (!current) return;
+    current.popover.remove();
+    document.removeEventListener("mousedown", current.outsideClick, true);
+    document.removeEventListener("keydown", current.escape, true);
+    global.removeEventListener("resize", current.reposition);
+    global.removeEventListener("scroll", current.reposition, true);
+    API.state.popover = null;
+  }
+
+  function bindEventInteraction(element, record) {
+    element.__workdayTermRecord = record;
+    if (element.getAttribute("tabindex") === null) element.setAttribute("tabindex", "0");
+    installEventDelegation();
+  }
+
+  function findManagedEvent(target) {
+    if (!target || target.nodeType !== 1) return null;
+    if (target.matches(EVENT_SELECTOR)) return target;
+    return target.closest(EVENT_SELECTOR);
+  }
+
+  function installEventDelegation() {
+    if (API.__eventDelegationInstalled) return;
+    API.__eventDelegationInstalled = true;
+    document.addEventListener(
+      "click",
+      (event) => {
+        const element = findManagedEvent(event.target);
+        if (!element || !element.__workdayTermRecord || element.style.display === "none") {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        showDetails(element, element.__workdayTermRecord);
+      },
+      true,
+    );
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const element = findManagedEvent(event.target);
+        if (!element || !element.__workdayTermRecord || element.style.display === "none") {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        showDetails(element, element.__workdayTermRecord);
+      },
+      true,
+    );
+  }
+
+  API.addStyles = addStyles;
+  API.applyTerm = applyTerm;
+  API.setShowWaitlisted = setShowWaitlisted;
+  API.addFilterButtons = addFilterButtons;
+  API.removeToolbars = removeToolbars;
+  API.restoreManagedEvents = restoreManagedEvents;
+  API.closePopover = closePopover;
+})(globalThis);

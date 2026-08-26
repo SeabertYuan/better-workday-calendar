@@ -1,13 +1,31 @@
 {
   "name": "better-workday-calendar",
-  "version": "2.1.0",
+  "version": "3.1.0",
   "description": "Improvements to UBC Workday",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SeabertYuan/better-workday-calendar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SeabertYuan/better-workday-calendar/issues"
+  },
+  "homepage": "https://github.com/SeabertYuan/better-workday-calendar",
   "main": "src/index.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "check:manifests": "node scripts/build.js --check",
+    "build": "node scripts/build.js",
+    "build:chrome": "node scripts/build.js chrome",
+    "build:firefox": "node scripts/build.js firefox",
+    "bump-version": "node scripts/bump-version.js",
+    "release": "node scripts/release.js"
   },
   "devDependencies": {
     "jest": "^29.7.0",
